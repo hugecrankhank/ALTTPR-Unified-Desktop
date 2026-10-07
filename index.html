@@ -676,7 +676,16 @@
 
   // EmulatorJS can't swap games in place. If one is running, stash the ROM
   // in IndexedDB, reload, and boot it from there on the next page load.
+  // Starting a game folds the Randomizer settings away so the game has the
+  // screen, in every layout, and remembers that across the reload
+  // EmulatorJS needs to switch games. The Randomizer button opens it again.
+  function foldRando() {
+    document.body.classList.remove('rando-open');
+    var t = $('r-toggle'); if (t) t.setAttribute('aria-expanded', 'false');
+    try { localStorage.setItem('unified-ipad-open', '0'); } catch (e) {}
+  }
   function startRom(bytes, name, reloadTrackers) {
+    foldRando();
     if (window.EJS_emulator) {
       stashRom(bytes, name).then(function () { location.reload(); }, function (e) {
         alert('Could not hand the ROM over to a fresh emulator: ' + e);

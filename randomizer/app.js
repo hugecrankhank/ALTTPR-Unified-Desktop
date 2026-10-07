@@ -282,11 +282,11 @@ async function generateAndPlay() {
     showLast();
     status(baseOk ? `Ready: ${res.hash} (${(res.ms / 1000).toFixed(1)}s)`
       : `Ready: ${res.hash}. Note: the base ROM check didn't match alttpr.com's build; report it if anything looks off.`, baseOk ? 'ok' : 'bad');
-    // on phones, fold the settings away so the game is on screen
-    if (window.innerWidth <= 900 || document.body.classList.contains('tablet')) {
-      document.body.classList.remove('rando-open');
-      $('r-toggle').setAttribute('aria-expanded', 'false');
-    }
+    // fold the settings away so the game is on screen (any layout), and
+    // remember it across the reload EmulatorJS needs to switch games
+    document.body.classList.remove('rando-open');
+    $('r-toggle').setAttribute('aria-expanded', 'false');
+    try { localStorage.setItem('unified-ipad-open', '0'); } catch (e) {}
     // keep it across the page reload EmulatorJS needs when switching games
     try { await kvSet('last-seed', last); } catch (e) {}
 
