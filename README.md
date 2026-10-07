@@ -106,6 +106,13 @@ work without touching Hutch's code:
   size (side by side when upright, in a column on the right when sideways).
 - *Classic:* the randomizer edition's layout.
 
+## The Randomizer bar
+
+The settings bar under the header folds away when a game starts, and again whenever
+you go back to playing with it open: a click on the game, a controller button, or a
+game key (typing in its boxes doesn't count). **Randomizer ▾** at the top left
+brings it back.
+
 ## Seed links and races
 
 After **Generate & Play**, two buttons copy a link to that seed:

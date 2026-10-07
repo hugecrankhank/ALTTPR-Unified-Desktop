@@ -581,6 +581,35 @@ export function init() {
     $('r-toggle').setAttribute('aria-expanded', String(open));
     try { localStorage.setItem('unified-desktop-open', open ? '1' : '0'); } catch (e) {}
   });
+  // While a game is running, the settings bar folds itself away as soon as
+  // you go back to playing: a click on the game, a controller button, or a
+  // key that isn't typed into one of the bar's fields. The Randomizer button
+  // brings it back.
+  const gameRunning = () => { const e = window.EJS_emulator; return !!(e && e.gameManager); };
+  function foldForPlay() {
+    if (!document.body.classList.contains('rando-open') || !gameRunning()) return;
+    if (!$('sprite-lib').hidden) return;
+    document.body.classList.remove('rando-open');
+    $('r-toggle').setAttribute('aria-expanded', 'false');
+    try { localStorage.setItem('unified-desktop-open', '0'); } catch (e) {}
+    setTimeout(() => window.dispatchEvent(new Event('resize')), 30);
+  }
+  $('game-wrap').addEventListener('pointerdown', foldForPlay, true);
+  document.addEventListener('keydown', (e) => {
+    const t = e.target;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (t && t.closest && t.closest('#sprite-lib, input, select, textarea')) return;
+    // (a button still focused from the bar would otherwise take Space/Enter)
+    if (document.body.classList.contains('rando-open') && gameRunning() && t && t.tagName === 'BUTTON') t.blur();
+    foldForPlay();
+  }, true);
+  setInterval(() => {
+    if (!document.body.classList.contains('rando-open') || !gameRunning()) return;
+    let pads = [];
+    try { pads = Array.from(navigator.getGamepads ? navigator.getGamepads() : []); } catch (e) {}
+    if (pads.some((gp) => gp && gp.buttons.some((b) => b.pressed))) foldForPlay();
+  }, 200);
+
   let open = true;
   try { open = localStorage.getItem('unified-desktop-open') !== '0'; } catch (e) {}
   document.body.classList.toggle('rando-open', open);
