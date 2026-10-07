@@ -54,6 +54,12 @@
     '#mob-mid { flex:1 1 auto; }',
     '#mob-bot .dungeon-slot { width:auto !important; margin:0 2px; }',
     'html.mobile .tracker-container { display:none !important; }',
+    // The map-size −/+ in the bottom bar, big enough for a finger.
+    'html.mobile .tracker-bottom-bar { height:auto !important; min-height:32px; box-sizing:border-box; }',
+    'html.mobile .tracker-bottom-bar .size-btn, html.mobile #item-settings-btn {',
+    '  width:34px; height:28px; font-size:18px; line-height:1; margin-right:4px; padding:0; }',
+    // No broadcast view on the tablet.
+    'html.mobile #item-broadcast-btn { display:none !important; }',
     // ── map ──
     'html.mobile #topbar, html.mobile #bottombar { display:none !important; }',
     'html.mobile #maps-outer { overflow:hidden !important; background:transparent !important; }',
@@ -158,6 +164,9 @@
           z = Math.min(1, innerWidth / (dW + 8), innerWidth / (cW + sW + 24));
         }
         bot.style.zoom = z < 1 ? z.toFixed(3) : 1;
+        // The gap left for the status bar is inside the zoomed row, so it's
+        // scaled back up to stay a true bar's height.
+        bot.style.marginBottom = ((bar ? bar.offsetHeight + 2 : 0) / Math.min(1, z)).toFixed(1) + 'px';
         var r = mid.getBoundingClientRect();
         if (parent !== window) parent.postMessage({ type: 'mobile-mid', top: r.top, height: r.height }, '*');
       }
