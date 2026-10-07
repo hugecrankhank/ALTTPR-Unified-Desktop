@@ -1,0 +1,25 @@
+== GET https://alttpr.com/hash/ry08NzXzy5
+HTTP/2 200 
+content-type: text/html; charset=UTF-8
+== OPTIONS https://alttpr.com/hash/ry08NzXzy5
+HTTP/2 200 
+== GET https://alttpr.com/api/h/ry08NzXzy5
+HTTP/2 200 
+content-type: application/json
+== OPTIONS https://alttpr.com/api/h/ry08NzXzy5
+HTTP/2 200 
+hash_ry08NzXzy5.json keys: ['generated', 'hash', 'logic', 'patch', 'size', 'spoiler']
+   size = 2
+   hash = ry08NzXzy5
+   generated = 2025-03-27T13:15:28+00:00
+   patch entries 131 first {'20466': [49]}
+   spoiler keys ['meta'] meta {"goal": "dungeons", "mode": "open", "size": 2, "build": "2023-09-22", "hints": "off", "logic": "NoGlitches", "notes": "<p>All Dungeons Keysanity w/ Boots Start</p>\n", "worlds": 1, "weapons": "randomized", "rom_mode": "NoGlitches", "spoilers": "off", "world_id": 1, "item_pool": "normal", "difficulty": "custom", "tournament": true, "pseudoboots": false, "accessibility": "items", "dungeon_items": "full", "item_placement": "advanced", "allow_quickswap": true, "item_functionality": "normal", "enemizer.pot_shuffle": "off", "entry_crystals_ganon": "7", "entry_crystals_tower": "7", "enemizer.boss_sh
+h_ry08NzXzy5.json keys: ['bpsLocation', 'hash', 'md5']
+   md5 = 79bbb4ad512838ab01fc06b7971f656c
+   bpsLocation = /bps/79bbb4ad512838ab01fc06b7971f656c.bps
+   hash = ry08NzXzy5
+bps: /bps/79bbb4ad512838ab01fc06b7971f656c.bps
+== GET bps
+HTTP/2 200 
+content-type: application/octet-stream
+-rw-r--r-- 1 runner runner 99037 Oct  7 18:45 base.bps
