@@ -112,7 +112,13 @@
     background: transparent; }
   #layout-sel { display: none; }
   @media (min-width: 901px) { #layout-sel { display: flex; } }
+  /* iOS home-screen app with a translucent status bar: height:100% comes up
+     short by the status bar's height, leaving a black strip at the bottom.
+     Pinning the page to the screen edges avoids it. The tracker stops just
+     above the home indicator so its bottom buttons stay tappable. */
+  body.tablet { position: fixed; inset: 0; height: auto; }
   body.tablet main { display: block; position: relative; }
+  body.tablet #tab-full { bottom: env(safe-area-inset-bottom, 0px); }
   body.tablet aside { display: none; }
   body.tablet .tab-pane { display: block; }
   body.tablet #game-wrap { position: absolute; z-index: 2; left: 50%; top: 30%; width: 0; height: 0; }

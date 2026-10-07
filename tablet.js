@@ -36,15 +36,55 @@
     return window.innerWidth >= 1000 && window.innerWidth > window.innerHeight;
   }
 
+  // ── scale the tracker bands to use spare height ───────────────────────────
+  // On a 4:3 screen (iPad Pro 12.9 at 1366x1024) the maps and game run out of
+  // width long before height, which left empty bands above and below them.
+  // So the item tracker is laid out at a smaller virtual size and scaled up by
+  // k: the items, dungeons and buttons all get bigger, and the middle band
+  // shrinks to the height the maps and game actually use.
+  var k = 1, lastT = null, lastB = null, tries = 0;
+  var K_MAX = 1.6;
+  function gapShare() {
+    var g = 0.34;
+    try { var v = parseFloat(localStorage.getItem(GAP_KEY)); if (!isNaN(v)) g = v; } catch (e) {}
+    return g;
+  }
+  function size() { var f = $('tab-full'); return { W: f.clientWidth, H: f.clientHeight }; }
+  function applyK() {
+    var f = $('tab-items'), z = size();
+    if (!z.W || !z.H) return;
+    f.style.width = (z.W / k) + 'px';
+    f.style.height = (z.H / k) + 'px';
+    f.style.transformOrigin = '0 0';
+    f.style.transform = k === 1 ? '' : 'scale(' + k + ')';
+  }
+  function retune() {
+    if (lastT === null || tries > 6) return;
+    var z = size();
+    if (!z.W || !z.H) return;
+    // what the middle needs: the maps at their width-limited size, and the
+    // game (4:3) in the gap they leave
+    var each = z.W * (1 - gapShare()) / 2;
+    var gameW = Math.max(0, z.W - 2 * each - 2 * MARGIN);
+    var need = Math.max(each, gameW * 3 / 4) + 8;
+    var kt = (z.H - need) / (lastT + lastB);
+    kt = Math.max(1, Math.min(K_MAX, kt));
+    if (Math.abs(kt - k) > 0.02) { k = kt; tries++; applyK(); }
+  }
+  function resetTune() { tries = 0; retune(); }
+
   // ── the map goes in the band the item tracker leaves empty ────────────────
   window.addEventListener('message', function (e) {
     if (!on || !e.data || e.data.type !== 'mobile-mid') return;
     if (e.source !== $('tab-items').contentWindow) return;
-    mid = { top: Math.round(e.data.top), height: Math.max(0, Math.round(e.data.height)) };
+    var Hv = size().H / k;
+    lastT = e.data.top; lastB = Math.max(0, Hv - e.data.top - e.data.height);
+    mid = { top: Math.round(e.data.top * k), height: Math.max(0, Math.round(e.data.height * k)) };
     var m = $('tab-map');
     m.style.top = mid.top + 'px';
     m.style.height = mid.height + 'px';
     placeGameSoon();
+    retune();
   });
 
   // ── the game goes in the gap between the two maps ─────────────────────────
@@ -112,7 +152,7 @@
   function load() {
     if (!urls) return;
     var blank = 'about:blank';
-    mid = null;
+    mid = null; lastT = lastB = null; tries = 0; k = 1; applyK();
     if (on) {
       $('items-frame').src = blank;
       $('map-frame').src = blank;
@@ -144,12 +184,17 @@
   };
 
   setupFrames();
+  // the randomizer bar opening/closing changes the space the layout gets
+  if (window.ResizeObserver) document.addEventListener('DOMContentLoaded', function () {
+    var full = $('tab-full');
+    if (full) new ResizeObserver(function () { if (on) { applyK(); resetTune(); placeGameSoon(); } }).observe(full);
+  });
   // the gap −/+ in the item tracker writes this key; follow it here too
-  window.addEventListener('storage', function (e) { if (e.key === GAP_KEY) placeGameSoon(); });
+  window.addEventListener('storage', function (e) { if (e.key === GAP_KEY) { placeGameSoon(); resetTune(); } });
   window.addEventListener('resize', function (e) {
     // ignore the resize events we send the emulator ourselves
     if (e && e.isTrusted === false) return;
-    if (on !== null) apply(false);
+    if (on !== null) { apply(false); applyK(); resetTune(); }
   });
   window.addEventListener('orientationchange', function () { setTimeout(function () { apply(false); }, 300); });
 })();
