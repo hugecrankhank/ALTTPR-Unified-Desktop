@@ -255,6 +255,38 @@
     }
   }
 
+  // ── the map's Settings, from the header ───────────────────────────────────
+  // The map's own Settings button sat on top of the map and covered a check,
+  // so it's hidden and the header's "Map settings" button opens the same
+  // menu. The menu itself still opens in the map's top-right corner.
+  var MAP_SETTINGS_CSS =
+    '#settings-btn{display:none!important}' +
+    '#settings-wrap,#settings-wrap.mob-settings{top:0!important;right:4px!important}';
+  function mapDoc() { try { return $('tab-map').contentDocument; } catch (e) { return null; } }
+  function syncMapSettingsBtn() {
+    var d = mapDoc(), p = d && d.getElementById('settings-panel');
+    var b = $('map-settings-btn');
+    if (b) b.classList.toggle('open', !!(p && p.classList.contains('open')));
+  }
+  function hookMapSettings(f) {
+    inject(f, 'unified-map-settings-css', MAP_SETTINGS_CSS);
+    try {
+      var p = f.contentDocument.getElementById('settings-panel');
+      if (p && f.contentWindow.MutationObserver) {
+        new f.contentWindow.MutationObserver(syncMapSettingsBtn).observe(p, { attributes: true, attributeFilter: ['class'] });
+      }
+    } catch (e) {}
+    syncMapSettingsBtn();
+  }
+  document.addEventListener('DOMContentLoaded', function () {
+    var b = $('map-settings-btn');
+    if (b) b.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var d = mapDoc(), sb = d && d.getElementById('settings-btn');
+      if (sb) sb.click();
+    });
+  });
+
   // ── frame setup ────────────────────────────────────────────────────────────
   function setupFrames() {
     $('tab-items').addEventListener('load', function () {
@@ -264,6 +296,7 @@
       if (!on) return;
       var f = this;
       try { if (window.UnifiedApp && window.UnifiedApp.installMapDedupe) window.UnifiedApp.installMapDedupe(f.contentWindow); } catch (e) {}
+      hookMapSettings(f);
       if (on === 'portrait') { setupPortraitFrame(f, 'map'); return; }
       try {
         var w = f.contentWindow;
