@@ -95,9 +95,24 @@
   function resetTune() { tries = 0; retune(); }
 
   // ── the map goes in the band the item tracker leaves empty ────────────────
+  // ── the item tracker's settings menu ───────────────────────────────────────
+  // Hutch's tracker says when its Tracker Settings open (mobile-settings). The
+  // map and the game lie over parts of the item tracker's page, so while the
+  // menu is open the map steps aside (as in his mobile.html) and the item
+  // tracker comes to the front, full screen, so every tap reaches the menu.
+  var settingsOpen = false;
+  function showSettings(open) {
+    settingsOpen = !!open;
+    $('tab-map').style.visibility = settingsOpen ? 'hidden' : '';
+    $('tab-items').style.zIndex = settingsOpen ? '3' : '';
+    if (on === 'portrait') placePortrait();
+  }
+
   window.addEventListener('message', function (e) {
-    if (!on || !e.data || e.data.type !== 'mobile-mid') return;
+    if (!on || !e.data) return;
     if (e.source !== $('tab-items').contentWindow) return;
+    if (e.data.type === 'mobile-settings') { showSettings(e.data.open); return; }
+    if (e.data.type !== 'mobile-mid') return;
     if (on === 'portrait') { portraitMid(e.data.height); return; }
     var Hv = size().H / k;
     lastT = e.data.top; lastB = Math.max(0, Hv - e.data.top - e.data.height);
@@ -157,6 +172,7 @@
   var itemsH = 400;        // height of the items + dungeons band, tuned to fit
   var MAP_GAP = 4;         // between the two maps
   function portraitMid(midH) {
+    if (settingsOpen) return;   // the frame is full screen for the menu just now
     // Hutch's item tracker leaves a middle band for the map; here there is
     // none, so shrink the frame until that band is gone.
     if (midH > 2) { itemsH = Math.max(120, Math.round(itemsH - midH + 1)); placePortrait(); }
@@ -185,6 +201,9 @@
       m.style.width = z.W + 'px'; m.style.height = each + 'px';
     }
     gw.style.left = '0px'; gw.style.top = '0px'; gw.style.width = colW + 'px'; gw.style.height = gameH + 'px';
+    if (settingsOpen) {   // menu open: the item tracker takes the whole screen for now
+      it.style.top = '0px'; it.style.width = z.W + 'px'; it.style.height = z.H + 'px';
+    }
     fitPortraitMap();
     if (gw.__lastW !== colW || gw.__lastH !== gameH) {
       gw.__lastW = colW; gw.__lastH = gameH;
@@ -266,6 +285,7 @@
     if (!urls) return;
     var blank = 'about:blank';
     mid = null; lastT = lastB = null; tries = 0; k = 1; itemsH = 400;
+    settingsOpen = false; $('tab-map').style.visibility = ''; $('tab-items').style.zIndex = '';
     if (on === 'tablet') applyK(); else if (on === 'portrait') placePortrait();
     if (on) {
       $('items-frame').src = blank;

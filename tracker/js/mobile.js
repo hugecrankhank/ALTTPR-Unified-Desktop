@@ -58,6 +58,13 @@
     'html.mobile .tracker-bottom-bar { height:auto !important; min-height:32px; box-sizing:border-box; }',
     'html.mobile .tracker-bottom-bar .size-btn, html.mobile #item-settings-btn {',
     '  width:34px; height:28px; font-size:18px; line-height:1; margin-right:4px; padding:0; }',
+    // Reset and New Game the same height as the rest, for a finger.
+    'html.mobile #item-reconnect-btn { width:34px; height:28px; font-size:18px; line-height:26px; }',
+    'html.mobile #item-newgame-btn { height:28px; font-size:14px; line-height:26px; padding:0 12px; margin-left:4px; }',
+    // The emulator sits over the middle, and another app's window can't be
+    // drawn under, so Tracker Settings open on the left, over the Light World.
+    'html.mobile #item-settings-overlay { justify-content:flex-start; align-items:center; padding-left:8px; box-sizing:border-box; }',
+    'html.mobile #item-settings-overlay .its-modal { max-width:calc(50vw - 24px); }',
     // No broadcast view on the tablet.
     'html.mobile #item-broadcast-btn { display:none !important; }',
     // ── map ──
@@ -172,6 +179,17 @@
       }
       addEventListener('resize', fit);
       fit(); setTimeout(fit, 300);
+
+      // The map lies over the middle of this page, so while the item tracker's
+      // settings are open it has to step aside or it swallows every tap.
+      var ov = document.getElementById('item-settings-overlay');
+      if (ov && parent !== window) {
+        var tell = function () {
+          parent.postMessage({ type: 'mobile-settings', open: !ov.classList.contains('hidden') }, '*');
+        };
+        new MutationObserver(tell).observe(ov, { attributes: true, attributeFilter: ['class'] });
+        tell();
+      }
 
       // The bottom bar's −/+ resize the maps here, not the item tracker.
       window.changeTrackerScale = function (delta) {
