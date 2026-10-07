@@ -705,7 +705,9 @@
   }
   function startRom(bytes, name, reloadTrackers) {
     foldRando();
+    currentRom = { bytes: bytes, name: name };
     if (window.EJS_emulator) {
+      switching = true;   // the reload below is ours, not iOS closing the page
       stashRom(bytes, name).then(function () { location.reload(); }, function (e) {
         alert('Could not hand the ROM over to a fresh emulator: ' + e);
       });
@@ -744,7 +746,16 @@
     }).catch(function () { return null; });
   }
   takeStashedRom().then(function (p) {
-    if (p && p.bytes && !window.EJS_emulator) startRom(new Uint8Array(p.bytes), p.name, false);
+    if (p && p.bytes && !window.EJS_emulator) { startRom(new Uint8Array(p.bytes), p.name, false); return; }
+    // No game handed over: if iOS closed the page while a game was running in
+    // the background, offer to reopen it where it was.
+    idbTake(RESUME_KEY).then(function (r) {
+      if (!r || !r.rom || !r.state || window.EJS_emulator) return;
+      if (Date.now() - r.at > 7 * 864e5) return;
+      if (!confirm('Your game was closed while you were in another app. Pick up where you left off?')) return;
+      pendingState = r.state;
+      startRom(new Uint8Array(r.rom), r.name, true);
+    });
   });
 
   // Used by the randomizer bar (randomizer/app.js).
@@ -780,7 +791,10 @@
     (ctx.sources || []).forEach(function (s) {
       if (s && s.gain && s.gain.gain.value !== 1) s.gain.gain.value = 1;
     });
-    if (ctx.audioCtx && ctx.audioCtx.state === 'suspended') { try { ctx.audioCtx.resume(); } catch (e) {} }
+    // iOS also leaves audio 'interrupted' after another app has the screen
+    if (ctx.audioCtx && ctx.audioCtx.state !== 'running' && ctx.audioCtx.state !== 'closed') {
+      try { ctx.audioCtx.resume(); } catch (e) {}
+    }
   }
   function hookVolume() {
     var ejs = window.EJS_emulator;
@@ -794,6 +808,70 @@
   ['touchend', 'click'].forEach(function (t) {
     document.addEventListener(t, function () { setTimeout(applyVolume, 50); }, true);
   });
+
+  // ── leaving the app and coming back ───────────────────────────────────────
+  // When another app takes the screen, iOS stops this page's timers and
+  // interrupts its audio. The emulator paces itself on that audio, so when you
+  // came back it could sit frozen waiting for sound that never resumed. And if
+  // iOS needs the memory, it closes the page outright and the run is lost.
+  // So: on the way out, save the game's state and pause it; on the way back,
+  // restart the audio and unpause. If iOS closed the page instead, the next
+  // launch offers to reopen that game exactly where it was.
+  var RESUME_KEY = 'resume-state';
+  var pausedForBackground = false;
+  var currentRom = null;       // { bytes, name } of the game that's running
+  var pendingState = null;     // a state to load as soon as the game starts
+  var switching = false;       // reloading to switch games
+  function idbPut(key, val) {
+    return idbOpen().then(function (db) {
+      return new Promise(function (resolve) {
+        var tx = db.transaction('kv', 'readwrite');
+        tx.objectStore('kv').put(val, key);
+        tx.oncomplete = tx.onerror = function () { resolve(); };
+      });
+    }).catch(function () {});
+  }
+  function idbTake(key) {
+    return idbOpen().then(function (db) {
+      return new Promise(function (resolve) {
+        var tx = db.transaction('kv', 'readwrite'), st = tx.objectStore('kv');
+        var g = st.get(key);
+        g.onsuccess = function () { if (g.result) st.delete(key); resolve(g.result || null); };
+        g.onerror = function () { resolve(null); };
+      });
+    }).catch(function () { return null; });
+  }
+  function leaving() {
+    var ejs = window.EJS_emulator;
+    if (switching || !ejs || !ejs.gameManager || ejs.paused) return;
+    try {
+      var state = ejs.gameManager.getState();
+      if (state && state.length && currentRom) idbPut(RESUME_KEY, {
+        state: state, rom: currentRom.bytes, name: currentRom.name, at: Date.now() });
+    } catch (e) {}
+    try { ejs.pause(); pausedForBackground = true; } catch (e) {}
+  }
+  function back() {
+    applyVolume();
+    var ejs = window.EJS_emulator;
+    if (ejs && pausedForBackground) {
+      pausedForBackground = false;
+      try { ejs.play(); } catch (e) {}
+    }
+    // still here, so the saved state isn't needed
+    idbTake(RESUME_KEY);
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'hidden') leaving(); else back();
+  });
+  window.addEventListener('pagehide', leaving);
+  window.addEventListener('pageshow', function (e) { if (e.persisted) back(); });
+  function loadPendingState() {
+    var ejs = window.EJS_emulator, st = pendingState;
+    pendingState = null;
+    if (!st || !ejs || !ejs.gameManager) return;
+    try { ejs.gameManager.loadState(new Uint8Array(st)); AlttpBridge.invalidate(); } catch (e) {}
+  }
 
   // ── keep the mouse free ───────────────────────────────────────────────────
   // snes9x advertises SNES-mouse support, so EmulatorJS pointer-locks the
@@ -824,6 +902,8 @@
       AlttpBridge.invalidate();
       // Give the core a moment to initialise WRAM before the first locate.
       setTimeout(function () { AlttpBridge.read(0xF50010, 1); }, 1500);
+      if (pendingState) setTimeout(loadPendingState, 800);
+      else idbTake(RESUME_KEY);   // a new game: any older saved spot no longer applies
     };
     var s = document.createElement('script');
     s.src = EJS_CDN + 'loader.js';
