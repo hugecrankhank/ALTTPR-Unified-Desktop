@@ -6,6 +6,8 @@
 // as a fallback). The sprite files and their previews come straight from
 // alttpr.com's file host, which does allow it.
 
+import { parseSprite, drawHead } from './sprite.js';
+
 const LIST_URL = 'sprites.json';
 const DIRECT_URL = 'https://alttpr.com/sprites';   // works only where alttpr.com allows it
 
@@ -40,6 +42,34 @@ export async function fetchSprite(entry) {
 }
 
 export function labelOf(entry) { return entry.author ? `${entry.name} by ${entry.author}` : entry.name; }
+
+// The game's own Link: its library file is missing on alttpr's host, and it's
+// the default anyway.
+export function isPlainLink(entry) { return /\/001\.link\.\d+\.zspr$/.test(entry.file); }
+
+// Some sprites in alttpr.com's list have no preview picture on its file host
+// (27 of 513 when this was written). For those, draw the head from the sprite
+// file itself, as for your own files.
+const drawn = new Map();   // file -> Promise<HTMLCanvasElement|null>
+export function previewFallback(entry, img) {
+  if (img.__fallback) return;
+  img.__fallback = true;
+  if (!drawn.has(entry.file)) {
+    drawn.set(entry.file, fetchSprite(entry).then((bytes) => {
+      const c = document.createElement('canvas');
+      return drawHead(parseSprite(bytes), c) ? c : null;
+    }).catch(() => null));
+  }
+  drawn.get(entry.file).then((c) => {
+    if (!c || !img.isConnected) return;
+    const copy = document.createElement('canvas');
+    copy.width = c.width; copy.height = c.height;
+    copy.getContext('2d').drawImage(c, 0, 0);
+    copy.className = 'sl-head-only';
+    copy.title = 'No preview on alttpr.com; drawn from the sprite';
+    img.replaceWith(copy);
+  });
+}
 
 /**
  * The library dialog. onPick(entry) is called with the chosen sprite; it
@@ -89,7 +119,9 @@ export function openLibrary($, onPick) {
       const b = document.createElement('button');
       b.type = 'button'; b.className = 'sl-item'; b.title = labelOf(s);
       const img = document.createElement('img');
-      img.loading = 'lazy'; img.decoding = 'async'; img.alt = ''; img.src = s.preview;
+      img.loading = 'lazy'; img.decoding = 'async'; img.alt = '';
+      img.addEventListener('error', () => previewFallback(s, img));
+      img.src = s.preview;
       const n = document.createElement('span'); n.className = 'sl-name'; n.textContent = s.name;
       const a = document.createElement('span'); a.className = 'sl-author'; a.textContent = s.author;
       b.append(img, n, a);

@@ -140,6 +140,11 @@ The **Link sprite** setting (Randomizer bar) shows a preview of the current spri
   (Link's head); click it to see the whole sprite sheet.
 - **Default** goes back to Link.
 
+A few sprites in alttpr.com's list (27 of 513 at last check) have no preview picture
+on its file host; for those the library draws Link's head from the sprite file instead.
+The library's plain *Link* entry has no file there either, so picking it is the same as
+**Default**.
+
 The sprite applies to every seed you generate until you change it. The library's list
 comes from alttpr.com/sprites, which browsers can't read from other sites, so the
 deploy workflow copies it into the site as `sprites.json` on every deploy and once a

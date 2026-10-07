@@ -4,7 +4,7 @@ import { md5 } from './md5.js';
 import { parseSprite, applySprite, drawHead, drawSheet } from './sprite.js';
 import { MsuPlayer, trackNumber } from './msu.js';
 import { buildLink, readLink, clearLink, codeForSeed, codeFromRom, codeNames, renderCode, PARAMS } from './share.js';
-import { openLibrary, fetchSprite, labelOf } from './library.js';
+import { openLibrary, fetchSprite, labelOf, isPlainLink } from './library.js';
 
 const msu = new MsuPlayer();
 
@@ -425,6 +425,10 @@ async function refreshSprite() {
   const own = !!parsed && !sp.preview && drawHead(parsed, cv);
   cv.hidden = !own;
   img.hidden = own;
+  // a library sprite whose picture is missing on alttpr's host: draw it
+  img.onerror = () => {
+    if (parsed && drawHead(parsed, cv)) { img.hidden = true; cv.hidden = false; }
+  };
   if (!own) img.src = (sp && sp.preview) || LINK_PREVIEW;
   $('r-sprite-prev').title = own ? 'Show the whole sprite sheet' : 'Browse the sprite library';
   $('r-sprite-prev').dataset.sheet = own ? '1' : '';
@@ -433,6 +437,12 @@ async function refreshSprite() {
 }
 
 async function useLibrarySprite(entry) {
+  if (isPlainLink(entry)) {
+    await kvDel('sprite');
+    status('Back to the default Link sprite for the next seed.', 'ok');
+    refreshSprite();
+    return;
+  }
   const bytes = await fetchSprite(entry);
   parseSprite(bytes);   // throws with a readable reason if it isn't a sprite
   const label = labelOf(entry);
