@@ -36,7 +36,7 @@
 (function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
-  var KEY = 'unified-ipad-layout';
+  var KEY = 'unified-desktop-layout';
   var GAP_KEY = 'alttp-mobile-gap';   // Hutch's key (js/mobile.js)
   var on = null;           // 'tablet', 'portrait' or false (classic); null until first load
   var urls = null;
@@ -47,11 +47,24 @@
     try { p = localStorage.getItem(KEY) || 'auto'; } catch (e) {}
     return p === 'portrait' ? 'stacked' : p;   // its first name
   }
+  // A mouse or trackpad as the main pointer: a desktop or laptop, where Auto
+  // means the Desktop layout. Touch screens keep the tablet layouts.
+  function finePointer() {
+    try { return window.matchMedia('(pointer: fine)').matches; } catch (e) { return false; }
+  }
+  // Desktop (desktop.js) is the classic layout plus pop-out windows, so for
+  // this file it is the classic layout (wantMode false).
+  function wantDesktop() {
+    var p = pref();
+    if (p === 'desktop') return true;
+    return p === 'auto' && finePointer() && window.innerWidth > 900;
+  }
   function wantMode() {
     var p = pref(), W = window.innerWidth, H = window.innerHeight;
     if (p === 'tablet') return p;
     if (p === 'stacked') return 'portrait';
-    if (p === 'classic') return false;
+    if (p === 'classic' || p === 'desktop') return false;
+    if (wantDesktop()) return false;
     if (W >= 1000 && W > H) return 'tablet';
     if (W >= 700 && H > W) return 'portrait';
     return false;
@@ -328,13 +341,24 @@
       $('tab-map').src = on === 'portrait' ? urls.map : withMobile(urls.map);
     } else {
       ['tab-items', 'tab-map'].forEach(function (id) { $(id).src = blank; });
-      $('items-frame').src = urls.items;
-      $('map-frame').src = urls.map;
+      // A panel popped out into its own window isn't loaded here as well
+      // (desktop.js): Hutch's tracker expects one copy of each.
+      var D = window.UnifiedDesktop;
+      $('items-frame').src = D && D.isOut('items') ? blank : urls.items;
+      $('map-frame').src = D && D.isOut('map') ? blank : urls.map;
     }
+  }
+
+  function syncDesktop(t) {
+    var d = !t && wantDesktop();
+    document.body.classList.toggle('desktop', d);
+    if (window.UnifiedDesktop) window.UnifiedDesktop.setActive(d);
   }
 
   function apply(force) {
     var t = wantMode();
+    // Classic <-> Desktop is the same layout here; desktop.js does the rest.
+    syncDesktop(t);
     if (t === on && !force) { placeGameSoon(); return; }
     on = t;
     clearGame();
@@ -346,7 +370,11 @@
 
   window.UnifiedTablet = {
     active: function () { return !!on; },
-    setUrls: function (u) { urls = u; if (on === null) apply(true); else load(); },
+    setUrls: function (u) {
+      urls = u;
+      if (window.UnifiedDesktop) window.UnifiedDesktop.setUrls(u);
+      if (on === null) apply(true); else load();
+    },
     setPref: function (p) { try { localStorage.setItem(KEY, p); } catch (e) {} apply(false); },
     pref: pref,
     fit: placeGame,

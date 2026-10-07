@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ALTTPR Unified iPad</title>
+<title>ALTTPR Unified Desktop</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#161b22">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="ALTTPR iPad">
+<meta name="apple-mobile-web-app-title" content="ALTTPR Desktop">
 <style>
   :root {
     --bg: #0e1116; --panel: #161b22; --line: #2a313c; --text: #e6e9ee;
@@ -132,10 +132,37 @@
   body.tablet header { padding-top: max(6px, env(safe-area-inset-top)) !important; padding-bottom: 6px; gap: 6px 12px; }
   body.tablet header h1 { font-size: 14px; }
 
+  /* Desktop layout (desktop.js): the classic layout, plus a resizable
+     tracker column whose panels can be popped out into their own windows.
+     The game takes over the space a panel leaves. */
+  #win-bar, #dock-split, #exit-game-only { display: none; }
+  body.desktop #win-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  #win-bar .lbl { color: var(--dim); font-size: 13px; }
+  #win-bar button { padding: 4px 9px; }
+  #win-bar button.on { border-color: var(--accent); color: var(--accent); background: #12261a; }
+  body.desktop main { grid-template-columns: minmax(0, 1fr) 6px auto; }
+  body.desktop #dock-split { display: block; cursor: col-resize; background: var(--panel);
+    border-left: 1px solid var(--line); touch-action: none; }
+  body.desktop #dock-split:hover { background: #22303f; }
+  body.desktop aside { border-left: 0; }
+  body.desktop.items-out aside .tabs, body.desktop.map-out aside .tabs { display: none; }
+  body.desktop.all-out aside, body.desktop.all-out #dock-split { display: none; }
+  body.desktop.all-out main { grid-template-columns: minmax(0, 1fr); }
+  #popup-note { position: fixed; top: 64px; right: 16px; z-index: 50; max-width: 360px; padding: 10px 12px;
+    background: #3a2a0c; border: 1px solid var(--warn); border-radius: 8px; color: var(--text); font-size: 13px; }
+  /* Game only: just the game, edge to edge, for capture. */
+  body.game-only header, body.game-only #rando-bar, body.game-only aside,
+  body.game-only #dock-split, body.game-only #popup-note { display: none !important; }
+  body.game-only main { grid-template-columns: minmax(0, 1fr) !important; position: relative; }
+  body.game-only #exit-game-only { display: block; position: absolute; z-index: 10; top: 8px; right: 8px;
+    opacity: 0; transition: opacity .2s; }
+  body.game-only main:hover #exit-game-only { opacity: .85; }
+
   /* Phones / narrow windows: one scrolling column. Game on top at the SNES
      aspect ratio, item tracker scaled to the screen width, then both maps
      stacked full-width so markers stay big enough to tap. */
   @media (max-width: 900px) {
+    body.desktop #dock-split { display: none; }
     #rando-bar label.f { flex: 1 1 42%; }
     #rando-bar label.f select, #rando-bar label.f input { width: 100%; }
     #rando-bar .group { flex-basis: 100%; }
@@ -152,7 +179,7 @@
 </head>
 <body>
 <header>
-  <h1>ALTTPR <span>Unified</span> iPad</h1>
+  <h1>ALTTPR <span>Unified</span> Desktop</h1>
   <button id="r-toggle" aria-expanded="false" aria-controls="rando-bar" title="Show or hide the randomizer settings">Randomizer</button>
   <label class="filebtn" for="rom-input" title="Play a seed .sfc you already have, or pick your Japanese 1.0 ROM to randomize it">Load ROM…</label>
   <!-- No `accept` filter: iOS doesn't know the .sfc/.smc types and would gray
@@ -175,14 +202,24 @@
       <option value="keysanity">Key Sanity</option>
     </select>
   </label>
-  <label class="ctl" id="layout-sel" title="Tablet: items on top, maps on the sides, dungeons at the bottom">Layout
+  <label class="ctl" id="layout-sel" title="Desktop: the game with the trackers beside it, and tracker windows you can pop out. Tablet: items on top, maps on the sides, dungeons at the bottom">Layout
     <select id="layout">
       <option value="auto">Auto</option>
+      <option value="desktop">Desktop</option>
       <option value="tablet">Tablet</option>
       <option value="stacked">Stacked</option>
       <option value="classic">Classic</option>
     </select>
   </label>
+  <!-- Desktop layout (desktop.js): tracker windows -->
+  <div id="win-bar" role="group" aria-label="Tracker windows">
+    <span class="lbl">Pop out</span>
+    <button id="pop-items" type="button">&#10697; Items</button>
+    <button id="pop-map" type="button">&#10697; Map</button>
+    <button id="open-broadcast" type="button" title="Hutch's broadcast view: a stream overlay of the items and dungeons">&#128225; Broadcast</button>
+    <button id="open-timer" type="button" title="Hutch's timer in its own window">&#9201; Timer</button>
+    <button id="game-only-btn" type="button" title="Hide everything but the game, for a clean capture. Esc to come back.">&#9974; Game only</button>
+  </div>
   <div class="spacer"></div>
   <button id="install-btn" hidden>Install app</button>
   <div id="pad-status"><i></i><span>No controller</span></div>
@@ -199,6 +236,8 @@
   </div>
   <button id="map-settings-btn" type="button" title="Map settings">&#9881; Map settings</button>
 </header>
+<div id="popup-note" role="alert" hidden>Your browser blocked the new window. Allow pop-ups for this site
+  (the icon at the right end of the address bar), then click the button again.</div>
 
 <section id="rando-bar" aria-label="Randomizer settings">
   <div class="group">
@@ -352,6 +391,7 @@
 </section>
 
 <main>
+  <button id="exit-game-only" type="button" title="Show the trackers and menus again (Esc)">Show trackers</button>
   <div id="game-wrap">
     <div id="game"></div>
     <div id="placeholder">
@@ -363,6 +403,7 @@
       <p style="font-size:12px">Everything runs in your browser. Your ROM is never uploaded.</p>
     </div>
   </div>
+  <div id="dock-split" title="Drag to resize the tracker column. Double-click to reset."></div>
   <aside>
     <div class="tabs">
       <button data-view="both" class="on">Items + Map</button>
@@ -382,6 +423,7 @@
 
 <script src="bridge/sni-bridge.js"></script>
 <script src="tablet.js"></script>
+<script src="desktop.js"></script>
 <script>
 (function () {
   'use strict';
@@ -390,7 +432,7 @@
 
   // ── settings → tracker URLs ───────────────────────────────────────────────
   var saved = {};
-  try { saved = JSON.parse(localStorage.getItem('unified-ipad-settings') || '{}'); } catch (e) {}
+  try { saved = JSON.parse(localStorage.getItem('unified-desktop-settings') || '{}'); } catch (e) {}
   $('gamemode').value = saved.gamemode || 'open';
   $('dungeonitems').value = saved.dungeonitems || 'standard';
 
@@ -398,7 +440,7 @@
   // GT crystal requirement). Cleared when a ROM is loaded from a file.
   var trackerExtra = saved.extra || null;
   function saveSettings() {
-    localStorage.setItem('unified-ipad-settings', JSON.stringify({
+    localStorage.setItem('unified-desktop-settings', JSON.stringify({
       gamemode: $('gamemode').value, dungeonitems: $('dungeonitems').value, extra: trackerExtra }));
   }
   function trackerUrls() {
@@ -701,7 +743,7 @@
   function foldRando() {
     document.body.classList.remove('rando-open');
     var t = $('r-toggle'); if (t) t.setAttribute('aria-expanded', 'false');
-    try { localStorage.setItem('unified-ipad-open', '0'); } catch (e) {}
+    try { localStorage.setItem('unified-desktop-open', '0'); } catch (e) {}
   }
   function startRom(bytes, name, reloadTrackers) {
     foldRando();
@@ -719,7 +761,7 @@
   }
   function idbOpen() {
     return new Promise(function (resolve, reject) {
-      var r = indexedDB.open('alttpr-unified-ipad', 1);
+      var r = indexedDB.open('alttpr-unified-desktop', 1);
       r.onupgradeneeded = function () { r.result.createObjectStore('kv'); };
       r.onsuccess = function () { resolve(r.result); };
       r.onerror = function () { reject(r.error); };
@@ -841,9 +883,13 @@
       });
     }).catch(function () { return null; });
   }
-  function leaving() {
+  function leaving(e) {
     var ejs = window.EJS_emulator;
     if (switching || !ejs || !ejs.gameManager || ejs.paused) return;
+    // On a desktop the window counts as hidden when it's minimized or fully
+    // covered, which with tracker windows on top can happen mid-run; don't
+    // pause the game for that. Closing the page still saves the spot.
+    if (window.UnifiedDesktop && window.UnifiedDesktop.active() && !(e && e.type === 'pagehide')) return;
     try {
       var state = ejs.gameManager.getState();
       if (state && state.length && currentRom) idbPut(RESUME_KEY, {

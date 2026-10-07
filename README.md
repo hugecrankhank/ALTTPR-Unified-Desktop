@@ -1,33 +1,83 @@
-# ALTTPR Unified iPad — tablet layout for the randomizer edition
+# ALTTPR Unified Desktop — pop-out tracker windows for PC
 
-This is the tablet edition of [ALTTPR Unified Randomizer](https://github.com/hugecrankhank/ALTTPR-Unified-Randomizer)
-(itself built on [ALTTPR Unified](https://github.com/hugecrankhank/ALTTPR-Unified)).
-Everything from the randomizer edition is here (seed generator, sprites, MSU-1 packs);
-what changes is the screen during play on an iPad or other wide screen:
+This is the desktop edition of [ALTTPR Unified](https://github.com/hugecrankhank/ALTTPR-Unified),
+built on the [iPad edition](https://github.com/hugecrankhank/ALTTPR-Unified-iPad)
+(which is built on the [randomizer edition](https://github.com/hugecrankhank/ALTTPR-Unified-Randomizer)).
+Everything from those is here (seed generator, sprites, MSU-1 packs, the tablet
+layouts). What it adds is a **Desktop** layout whose tracker panels can be popped
+out into windows of their own, to arrange by hand or capture for a stream.
 
 ```
-┌──────────────────────── items ────────────────────────┐
-│  Light World map  │      emulator      │  Dark World map │
-└──────────────── dungeon keys / crystals ───────────────┘
+ main window                         pop-out windows (any size, anywhere)
+┌──────────────────┬───────┐        ┌───────────┐  ┌─────────────────────┐
+│                  │ items │  ⧉ →   │   items   │  │ Light W.  │ Dark W. │
+│       game       ├───────┤        └───────────┘  └─────────────────────┘
+│                  │  map  │        the game grows into the space they leave
+└──────────────────┴───────┘
 ```
 
-- **Layout** in the top bar: *Auto* (tablet layout in landscape on screens 1000px+
-  wide, stacked layout on screens 700px+ wide held upright, the classic layout
-  otherwise), *Tablet*, *Stacked*, *Classic* (the randomizer edition's layout).
-- **Stacked:** the game with the items and dungeons right under it, and both maps
-  at full size with the map's menu bars hidden (its Settings button floats in the
-  corner). Held upright, the maps sit side by side across the bottom; turned
-  sideways, they stack in a column on the right.
-- The tablet layout is built on Hutch's own tablet view (`mobile.html` /
-  `js/mobile.js` in [his tracker](https://github.com/hutchch/ALTTPR-Tracker)): the
-  item tracker lays out the items on top and the dungeons along the bottom, the
-  map shows Light World left and Dark World right, and the game sits in the gap
-  between the two maps.
-- **Resize while playing:** the **−** / **+** buttons at the bottom left of the
-  item tracker shrink or grow the maps; the game grows into the space they free.
-  The size is remembered.
-- Settings, ROMs, sprites and MSU packs are stored separately from the other two
-  editions, so all three can be used side by side.
+## Desktop layout and pop-out windows
+
+- **Layout → Auto** picks *Desktop* on a computer with a mouse or trackpad (window
+  wider than 900px) and the tablet layouts on touch screens. *Desktop* can also be
+  picked directly.
+- **Pop out → Items / Map** opens that panel in its own window. It keeps tracking
+  live, and clicks on it (marking items, checks, prizes) work exactly as they do
+  docked. The game grows into the space it leaves; with both out, the main window
+  is just the game.
+- **Put a panel back:** close its window, press **Dock** in its toolbar, or click its
+  (green) **Pop out** button again.
+- **Window toolbar:** it appears while the mouse moves over a pop-out and fades out
+  after a moment, so a capture shows only the tracker.
+  - *Show* (map): both worlds, Light World only, or Dark World only.
+  - *Arrange* (map): side by side, stacked, or whichever fits the window best.
+  - *Background:* the tracker's own, black, or green/blue/magenta for an OBS
+    Chroma Key filter.
+  - *Fit:* the tracker grows or shrinks with the window. Off: the tracker's own
+    size and zoom buttons.
+  - *Clean:* hides the tracker's own menu bars. ⚙ still opens its settings.
+  - 📌 keeps the toolbar showing.
+- Each window remembers its size, position and options.
+- **Broadcast** and **Timer** open Hutch's own broadcast view (a stream overlay of
+  items and dungeons) and timer, connected to the game the same way.
+- **Game only** hides everything but the game, edge to edge, for capture. Esc (or
+  *Show trackers* at the top right) brings it back.
+- **Resize the tracker column** by dragging its left edge; double-click to reset.
+
+**Capturing in OBS:** add a *Window Capture* per window (they're titled
+*ALTTPR Items* and *ALTTPR Map*). Use a solid background plus a *Chroma Key* filter
+to drop the background.
+
+Things to know:
+
+- **Allow pop-ups** for the site the first time. If the browser blocks a window, a
+  note says so; allow pop-ups from the address bar and click again.
+- **Keyboard input goes to the window you last clicked.** After clicking a tracker
+  window, click the game before playing on the keyboard. A controller isn't
+  affected.
+- **Keep the game window at least partly visible.** Browsers slow a fully hidden or
+  minimized window down, and the game with it. (The game isn't paused when the
+  window is covered.)
+- **Popping a panel out or back in restarts that tracker.** Everything read from the
+  game comes back within a second; a manual mark on an item the game doesn't track
+  is reset. The same happens to all trackers when a new ROM is loaded.
+- **One copy of each panel.** Hutch's tracker expects one item tracker and one map;
+  two copies of either would disagree after a manual click. So a panel lives either
+  in the main window or in its window, never both. Splitting the items from the
+  dungeons, or the two worlds into windows open at the same time, needs a sync
+  layer between copies and is the next step.
+- Settings, ROMs, sprites and MSU packs are stored separately from the other
+  editions, so they can be used side by side.
+
+### The tablet layouts (from the iPad edition)
+
+- *Tablet:* items on top, Light World left, game in the middle, Dark World right,
+  dungeons along the bottom (Hutch's own tablet view, `js/mobile.js` in
+  [his tracker](https://github.com/hutchch/ALTTPR-Tracker)). The **−** / **+** at the
+  bottom left of the item tracker resize the maps; the game takes the rest.
+- *Stacked:* the game with the items and dungeons under it, and both maps at full
+  size (side by side when upright, in a column on the right when sideways).
+- *Classic:* the randomizer edition's layout.
 
 ## Run it
 
@@ -35,7 +85,7 @@ It must be served over HTTP (opening `index.html` as a file won't work, because
 the browser blocks the tracker frames from talking to the page).
 
 ```bash
-cd ALTTPR-Unified-iPad
+cd ALTTPR-Unified-Desktop
 python3 -m http.server 8080      # or: npx serve .
 ```
 
@@ -53,10 +103,11 @@ test from any device.
 ## How it works
 
 ```
-index.html
+index.html  (desktop.js: Desktop layout, pop-outs; tablet.js: tablet layouts)
 ├── EmulatorJS (snes9x core, from cdn.emulatorjs.org)
 ├── bridge/sni-bridge.js   ← reads emulator memory, speaks usb2snes addresses
-└── <iframe> tracker/itemtracker.html, tracker/map.html   (Hutch, unmodified)
+├── <iframe> tracker/itemtracker.html, tracker/map.html   (Hutch, unmodified)
+└── pop-out windows: popout.html → <iframe> the same tracker page
         └── bridge/sni-shim.js  ← swaps WebSocket for an in-page fake SNI
 ```
 
@@ -72,6 +123,16 @@ index.html
    `F50000+` → WRAM, `E00000+` → SRAM, `000000+` → ROM file.
    Because Hutch thinks it's talking to SNI, its tracker code is untouched,
    so upstream tracker updates can be dropped straight into `tracker/`.
+
+A pop-out window (`popout.html`) holds the same tracker page in a frame. The
+shim looks for `AlttpBridge` through the frame's parent and then that window's
+`opener`, the main page, so a popped-out tracker reads the game exactly like a
+docked one. Hutch's windows already talk to each other over one
+`BroadcastChannel` (`alttp-tracker`), which works across all windows of the site,
+so the item tracker and map stay in step wherever each one is. `desktop.js`
+keeps one copy of each panel and handles docking; each pop-out asks the main
+page once a second which tracker to show, which is also how it reconnects after
+the main page reloads for a new ROM.
 
 The only change to the Hutch files is one `<script>` line at the top of
 `itemtracker.html`, `map.html`, `timer.html` and `broadcast.html`. Opened

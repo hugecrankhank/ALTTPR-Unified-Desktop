@@ -1,7 +1,7 @@
 {
-  "name": "ALTTPR Unified iPad",
-  "short_name": "ALTTPR iPad",
-  "description": "A Link to the Past Randomizer emulator with a built-in seed generator and a tablet layout for the Hutch item and map tracker.",
+  "name": "ALTTPR Unified Desktop",
+  "short_name": "ALTTPR Desktop",
+  "description": "A Link to the Past Randomizer emulator with a built-in seed generator and the Hutch item and map tracker, with tracker panels you can pop out into their own windows.",
   "id": "./",
   "start_url": "./",
   "scope": "./",

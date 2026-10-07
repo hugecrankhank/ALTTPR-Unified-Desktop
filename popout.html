@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ALTTPR Tracker</title>
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<!--
+  A tracker panel in its own window (Desktop layout, see desktop.js).
+
+  It holds one Hutch tracker page (item tracker or map) in a frame that fills
+  the window. The tracker finds the game through this window's opener, the
+  main page, so it tracks live exactly as it does when docked. This page adds
+  what a window of its own needs: fitting the tracker to whatever size the
+  window is dragged to, a choice of what to show, plain or green-screen
+  backgrounds for stream capture, and a toolbar that hides itself.
+
+  The toolbar appears while the mouse moves over the window and fades out
+  after a moment, so a capture of the window shows only the tracker.
+-->
+<style>
+  :root { --bg: #0e1116; --panel: #161b22; --line: #2a313c; --text: #e6e9ee; --dim: #8b95a3; --accent: #5fbf6f; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #000; color: var(--text);
+    font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  #f { position: absolute; left: 0; top: 0; width: 100%; height: 100%; border: 0; display: block;
+    transform-origin: 0 0; background: transparent; }
+  #bar { position: fixed; z-index: 10; top: 6px; left: 50%; transform: translate(-50%, -8px);
+    display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; justify-content: center;
+    max-width: calc(100% - 12px); padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px;
+    background: rgba(22, 27, 34, .96); box-shadow: 0 4px 16px rgba(0,0,0,.5);
+    opacity: 0; pointer-events: none; transition: opacity .18s, transform .18s; }
+  body.show #bar, body.pinned #bar { opacity: 1; pointer-events: auto; transform: translate(-50%, 0); }
+  #bar b { font-size: 13px; padding: 0 2px; }
+  #bar label { display: flex; align-items: center; gap: 4px; color: var(--dim); white-space: nowrap; }
+  #bar select, #bar button { background: #0d1117; color: var(--text); border: 1px solid var(--line);
+    border-radius: 6px; padding: 3px 7px; font: inherit; cursor: pointer; }
+  #bar button:hover, #bar select:hover { border-color: #3d4654; }
+  #bar button.on { border-color: var(--accent); color: var(--accent); }
+  #bar .map-only { display: none; }
+  body.panel-map #bar .map-only { display: flex; }
+  #msg { position: fixed; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center;
+    padding: 24px; text-align: center; color: var(--dim); background: var(--bg); }
+  #msg[hidden] { display: none; }
+</style>
+</head>
+<body>
+<iframe id="f" title="Tracker" allowtransparency="true"></iframe>
+<div id="msg">Connecting to the game window…</div>
+<div id="bar" role="toolbar" aria-label="Window options">
+  <b id="bar-name">Tracker</b>
+  <label class="map-only" title="Which worlds this window shows">Show
+    <select id="o-view">
+      <option value="both">Both worlds</option>
+      <option value="light">Light World</option>
+      <option value="dark">Dark World</option>
+    </select>
+  </label>
+  <label class="map-only" title="How the two worlds sit when both are shown">Arrange
+    <select id="o-arrange">
+      <option value="auto">Auto</option>
+      <option value="side">Side by side</option>
+      <option value="stack">Stacked</option>
+    </select>
+  </label>
+  <label title="Background behind the tracker. A solid green, blue or magenta can be keyed out in OBS with a Chroma Key filter.">Background
+    <select id="o-bg">
+      <option value="">Tracker's own</option>
+      <option value="#000000">Black</option>
+      <option value="#00b140">Green screen</option>
+      <option value="#0047bb">Blue screen</option>
+      <option value="#ff00ff">Magenta</option>
+    </select>
+  </label>
+  <label title="Grow or shrink the tracker to fill the window"><input type="checkbox" id="o-fit"> Fit</label>
+  <label title="Hide the tracker's own menu bars, for capture"><input type="checkbox" id="o-clean"> Clean</label>
+  <button id="b-settings" type="button" title="The tracker's own settings">&#9881;</button>
+  <button id="b-pin" type="button" title="Keep this toolbar showing">&#128204;</button>
+  <button id="b-dock" type="button" title="Put this panel back in the main window">Dock</button>
+</div>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var q = new URLSearchParams(location.search);
+  var panel = q.get('panel') === 'map' ? 'map' : 'items';
+  var NAME = panel === 'map' ? 'Map' : 'Items';
+  var PREF_KEY = 'unified-desktop-pop-' + panel;
+  var GEOM_KEY = 'unified-desktop-geom-' + panel;
+  var f = $('f');
+
+  document.title = 'ALTTPR ' + NAME;   // what OBS's Window Capture lists
+  document.body.classList.add('panel-' + panel);
+  $('bar-name').textContent = NAME;
+
+  // ── options, remembered per panel ─────────────────────────────────────────
+  var prefs = { view: 'both', arrange: 'auto', bg: '', fit: true, clean: false, pinned: false };
+  try { Object.assign(prefs, JSON.parse(localStorage.getItem(PREF_KEY) || '{}')); } catch (e) {}
+  function savePrefs() { try { localStorage.setItem(PREF_KEY, JSON.stringify(prefs)); } catch (e) {} }
+  $('o-view').value = prefs.view;
+  $('o-arrange').value = prefs.arrange;
+  $('o-bg').value = prefs.bg;
+  $('o-fit').checked = !!prefs.fit;
+  $('o-clean').checked = !!prefs.clean;
+  document.body.classList.toggle('pinned', !!prefs.pinned);
+  $('b-pin').classList.toggle('on', !!prefs.pinned);
+
+  function bind(id, key, prop) {
+    $(id).addEventListener('change', function () {
+      prefs[key] = this[prop || 'value'];
+      savePrefs(); restyle(); fitSoon();
+    });
+  }
+  bind('o-view', 'view'); bind('o-arrange', 'arrange'); bind('o-bg', 'bg');
+  bind('o-fit', 'fit', 'checked'); bind('o-clean', 'clean', 'checked');
+  $('b-pin').addEventListener('click', function () {
+    prefs.pinned = !prefs.pinned; savePrefs();
+    document.body.classList.toggle('pinned', prefs.pinned);
+    this.classList.toggle('on', prefs.pinned);
+  });
+
+  // ── the toolbar shows while the mouse moves ───────────────────────────────
+  var hideTimer = null;
+  function reveal() {
+    document.body.classList.add('show');
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(function () {
+      if (!$('bar').matches(':hover')) document.body.classList.remove('show');
+      else reveal();
+    }, 1800);
+  }
+  document.addEventListener('mousemove', reveal);
+  document.addEventListener('mouseleave', function () {
+    clearTimeout(hideTimer); document.body.classList.remove('show');
+  });
+
+  // ── the main window ───────────────────────────────────────────────────────
+  function main() {
+    try { var o = window.opener; return o && !o.closed ? o : null; } catch (e) { return null; }
+  }
+  function api() { var o = main(); try { return o && o.UnifiedDesktop; } catch (e) { return null; } }
+  function message(text) {
+    var m = $('msg');
+    m.hidden = !text;
+    if (text) m.textContent = text;
+  }
+
+  // Ask the main window, once a second, what this window should show. That
+  // also catches the main window reloading (new ROM), a new seed or new
+  // tracker settings, and the main window no longer wanting this window.
+  var key = null, lost = 0;
+  function tick() {
+    var a = api(), r;
+    if (!a) {
+      lost++;
+      if (!main()) message('The game window was closed. Open ALTTPR Unified Desktop again and pop this panel out from there.');
+      else if (lost > 3) message('Waiting for the game window…');
+      return;
+    }
+    try { r = a.claim(panel, window); } catch (e) { return; }
+    if (r === null) { window.close(); return; }     // docked, or another layout
+    if (!r || !r.url) return;                       // the main window is still starting
+    lost = 0;
+    if (r.key !== key) { key = r.key; message(''); f.src = r.url; }
+  }
+  tick();
+  setInterval(tick, 1000);
+
+  $('b-dock').addEventListener('click', function () {
+    var a = api();
+    if (a) { try { a.dock(panel, true); } catch (e) {} }
+    window.close();
+  });
+
+  // ── remember where this window is ─────────────────────────────────────────
+  var lastGeom = '';
+  setInterval(function () {
+    var g = { x: window.screenX, y: window.screenY, w: window.innerWidth, h: window.innerHeight };
+    var s = JSON.stringify(g);
+    if (s !== lastGeom && g.w > 0 && g.h > 0) {
+      lastGeom = s;
+      try { localStorage.setItem(GEOM_KEY, s); } catch (e) {}
+    }
+  }, 1000);
+
+  // ── the tracker inside ────────────────────────────────────────────────────
+  function doc() { try { return f.contentDocument; } catch (e) { return null; } }
+  function win() { try { return f.contentWindow; } catch (e) { return null; } }
+  function inject(id, css) {
+    var d = doc();
+    if (!d || !d.head) return;
+    var st = d.getElementById(id);
+    if (!st) { st = d.createElement('style'); st.id = id; d.head.appendChild(st); }
+    st.textContent = css;
+  }
+
+  function restyle() {
+    var css = '', bg = prefs.bg;
+    if (panel === 'map') {
+      // The maps are centred in whatever space there is, never scrolled.
+      css += '#maps-outer{display:flex!important;align-items:center;justify-content:center;' +
+             'overflow:hidden!important}#maps{margin:0!important}';
+      if (prefs.clean) {
+        css += '#topbar,#bottombar{display:none!important}' +
+               '#maps-outer{height:100vh!important}' +
+               '#settings-wrap{position:fixed!important;top:4px;right:4px;z-index:50}' +
+               '#settings-btn{display:none!important}' +
+               '#settings-panel{max-height:calc(100vh - 40px);overflow-y:auto}';
+      }
+      if (prefs.view === 'light') css += '#dw{display:none!important}';
+      if (prefs.view === 'dark') css += '#lw{display:none!important}';
+      if (bg) css += 'html,body,#maps-outer{background:' + bg + '!important}';
+    } else {
+      if (prefs.clean) css += '.tracker-bottom-bar{display:none!important}';
+      if (bg) css += 'html,body{background:' + bg + '!important;background-image:none!important}';
+      css += 'html{overflow:hidden!important}';
+    }
+    inject('unified-popout-css', css);
+    document.body.style.background = bg || '#000';
+    // With the map's bars hidden its settings menu needs a home: the body.
+    if (panel === 'map') {
+      var d = doc(), sw = d && d.getElementById('settings-wrap'), tb = d && d.getElementById('topbar');
+      if (sw && tb) {
+        if (prefs.clean && sw.parentNode !== d.body) d.body.appendChild(sw);
+        else if (!prefs.clean && sw.parentNode === d.body) tb.appendChild(sw);
+      }
+    }
+  }
+
+  $('b-settings').addEventListener('click', function () {
+    var w = win(), d = doc();
+    try {
+      if (panel === 'items' && w.openItemSettings) w.openItemSettings();
+      else if (panel === 'map') { var b = d.getElementById('settings-btn'); if (b) b.click(); }
+    } catch (e) {}
+  });
+
+  // ── fitting ───────────────────────────────────────────────────────────────
+  // Item tracker: Hutch's grid has a natural size (about 500 x 410 at his
+  // default scale). Measure it and scale the whole page to fill the window,
+  // keeping its shape.
+  function itemsNatural(d) {
+    var w = d.defaultView, left = Infinity, top = Infinity, right = 0, bottom = 0;
+    Array.prototype.forEach.call(d.body.children, function (el) {
+      if (el.tagName === 'SCRIPT' || el.tagName === 'STYLE') return;
+      var cs = w.getComputedStyle(el);
+      if (cs.display === 'none' || cs.visibility === 'hidden') return;
+      if (cs.position === 'fixed' && el.id === 'item-settings-overlay') return;
+      var r = el.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      left = Math.min(left, r.left); top = Math.min(top, r.top);
+      right = Math.max(right, r.right); bottom = Math.max(bottom, r.bottom);
+    });
+    if (right <= 0) return null;
+    // keep the page's own margins on both sides
+    return { w: Math.ceil(right + Math.max(0, left)), h: Math.ceil(bottom + Math.max(0, top)) };
+  }
+  var natural = null;
+  function fitItems() {
+    var d = doc();
+    if (!d || !d.body) return;
+    var W = window.innerWidth, H = window.innerHeight;
+    if (!prefs.fit) { f.style.width = f.style.height = f.style.transform = ''; natural = null; return; }
+    // Measure at the tracker's own size: one unscaled layout at a generous
+    // width, so nothing wraps while it's measured.
+    f.style.transform = '';
+    f.style.width = Math.max(W, 520) + 'px'; f.style.height = Math.max(H, 420) + 'px';
+    var n = itemsNatural(d);
+    if (!n) return;
+    natural = n;
+    var k = Math.min(W / n.w, H / n.h);
+    k = Math.max(0.3, Math.min(6, k));
+    f.style.width = (W / k) + 'px';
+    f.style.height = (H / k) + 'px';
+    f.style.transform = 'scale(' + k + ')';
+  }
+
+  // Map: both worlds (or one) as big as the window allows, side by side or
+  // stacked, whichever is bigger (or as chosen). Markers are placed in %, so
+  // any size works.
+  function fitMap() {
+    var d = doc(), w = win();
+    f.style.width = f.style.height = f.style.transform = '';
+    if (!d) return;
+    var outer = d.getElementById('maps-outer'), maps = d.getElementById('maps');
+    if (!outer || !maps || !outer.clientWidth) return;
+    if (!prefs.fit) {
+      // Hutch's own zoom; put back his functions if they were replaced
+      if (w.__unifiedZoom) { w.applyZoom = w.__unifiedZoom; w.__unifiedZoom = null; w.applyZoom(true); }
+      return;
+    }
+    var cs = w.getComputedStyle(outer);
+    var cw = outer.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    var ch = outer.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+    var gap = parseFloat(w.getComputedStyle(maps).columnGap || w.getComputedStyle(maps).gap) || 12;
+    var one = prefs.view !== 'both', vertical = false, size;
+    if (one) size = Math.min(cw, ch);
+    else {
+      var side = Math.min((cw - gap) / 2, ch), stack = Math.min(cw, (ch - gap) / 2);
+      vertical = prefs.arrange === 'stack' || (prefs.arrange === 'auto' && stack > side);
+      size = vertical ? stack : side;
+    }
+    size = Math.max(100, Math.floor(size));
+    maps.classList.toggle('vertical', vertical);
+    var ls = d.getElementById('layout-sel'); if (ls) ls.value = vertical ? 'vertical' : 'horizontal';
+    d.querySelectorAll('.map-wrap').forEach(function (el) { el.style.width = el.style.height = size + 'px'; });
+    var pct = size / 512 * 100;
+    // markers shrink with the map below 100%, as Hutch's own zoom does
+    d.documentElement.style.setProperty('--mk', pct < 100 ? (pct / 100).toFixed(3) : '1');
+    var zl = d.getElementById('zoom-label'); if (zl) zl.textContent = Math.round(pct) + '%';
+    // Keep Hutch's zoom and window sizing from undoing this. (In a frame his
+    // window sizing does nothing anyway; his zoom buttons would.)
+    if (!w.__unifiedZoom && typeof w.applyZoom === 'function') w.__unifiedZoom = w.applyZoom;
+    w.applyZoom = function () { fitSoon(); };
+  }
+
+  function fit() { if (panel === 'map') fitMap(); else fitItems(); }
+  var fitTimer = null;
+  function fitSoon() { clearTimeout(fitTimer); fitTimer = setTimeout(fit, 50); }
+  window.addEventListener('resize', fitSoon);
+
+  // ── the map: skip redraws when nothing changed ────────────────────────────
+  // Same as the main page does for its docked map: about once a second the
+  // item tracker resends identical data and Hutch's map would repaint every
+  // marker, which shows as a flicker.
+  function installMapDedupe(w) {
+    if (!w || w.__unifiedDedupe) return;
+    w.__unifiedDedupe = true;
+    var origRooms = w.onRoomsUpdated, lastRooms = null;
+    if (typeof origRooms === 'function') {
+      w.onRoomsUpdated = function (data) {
+        try {
+          if (data && lastRooms && data.length === lastRooms.length) {
+            var same = true;
+            for (var i = 0; i < data.length; i++) if (data[i] !== lastRooms[i]) { same = false; break; }
+            if (same) return;
+          }
+          lastRooms = data ? Array.prototype.slice.call(data) : null;
+        } catch (e) {}
+        return origRooms.apply(this, arguments);
+      };
+    }
+    var bc = w._bc;
+    if (bc && typeof bc.onmessage === 'function') {
+      var origMsg = bc.onmessage, lastByShape = {};
+      bc.onmessage = function (e) {
+        if (e && e.data && e.data.type === 'items' && e.data.data) {
+          try {
+            var snap = e.data.data, keys = Object.keys(snap).sort();
+            var shape = keys.join(','), sig = JSON.stringify(snap, keys);
+            if (lastByShape[shape] === sig) return;
+            lastByShape[shape] = sig;
+          } catch (x) {}
+        }
+        return origMsg.call(this, e);
+      };
+    }
+  }
+
+  f.addEventListener('load', function () {
+    var d = doc(), w = win();
+    if (!d || !w || !d.body || w.location.href === 'about:blank') return;
+    natural = null;
+    // the toolbar follows the mouse over the tracker too
+    d.addEventListener('mousemove', reveal);
+    if (panel === 'map') {
+      try { installMapDedupe(w); } catch (e) {}
+      // Hutch's map resizes its own window to fit its zoom; in a frame that
+      // does nothing, but keep it from trying.
+      w.resizeWindowToMap = function () {};
+    }
+    restyle();
+    fit(); setTimeout(fit, 300); setTimeout(fit, 1000);
+    try {
+      // refit when the tracker changes its own size (his −/+, settings, bars)
+      var watch = panel === 'map' ? d.getElementById('maps-outer') : d.querySelector('.tracker-container');
+      if (watch && w.ResizeObserver) new w.ResizeObserver(function () {
+        if (panel === 'map' || !natural) return fitSoon();
+        // items: only a real change in the grid's size, not our own scaling
+        var n = itemsNatural(d);
+        if (n && (Math.abs(n.w - natural.w) > 2 || Math.abs(n.h - natural.h) > 2)) fitSoon();
+      }).observe(watch);
+    } catch (e) {}
+  });
+})();
+</script>
+</body>
+</html>
