@@ -12,11 +12,12 @@ what changes is the screen during play on an iPad or other wide screen:
 ```
 
 - **Layout** in the top bar: *Auto* (tablet layout in landscape on screens 1000px+
-  wide, portrait layout on screens 700px+ wide held upright, the classic layout
-  otherwise), *Tablet*, *Portrait*, *Classic* (the randomizer edition's layout).
-- **Portrait:** the game on top, the items and dungeons under it, and both maps
-  side by side across the full width at the bottom, with the map's menu bars
-  hidden (its Settings button floats in the corner).
+  wide, stacked layout on screens 700px+ wide held upright, the classic layout
+  otherwise), *Tablet*, *Stacked*, *Classic* (the randomizer edition's layout).
+- **Stacked:** the game with the items and dungeons right under it, and both maps
+  at full size with the map's menu bars hidden (its Settings button floats in the
+  corner). Held upright, the maps sit side by side across the bottom; turned
+  sideways, they stack in a column on the right.
 - The tablet layout is built on Hutch's own tablet view (`mobile.html` /
   `js/mobile.js` in [his tracker](https://github.com/hutchch/ALTTPR-Tracker)): the
   item tracker lays out the items on top and the dungeons along the bottom, the

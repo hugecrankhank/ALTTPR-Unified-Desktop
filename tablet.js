@@ -28,6 +28,9 @@
  *   │ Light World map  │  Dark World map   │
  *   └──────────────────┴───────────────────┘
  *
+ * Turned sideways, the same layout puts the maps in a column on the right
+ * (Light World over Dark World), with the game and items + dungeons on the left.
+ *
  * Loaded before the main script, which hands it the tracker URLs.
  */
 (function () {
@@ -39,10 +42,15 @@
   var urls = null;
   var mid = null;          // the middle band the item tracker last reported
 
-  function pref() { try { return localStorage.getItem(KEY) || 'auto'; } catch (e) { return 'auto'; } }
+  function pref() {
+    var p = 'auto';
+    try { p = localStorage.getItem(KEY) || 'auto'; } catch (e) {}
+    return p === 'portrait' ? 'stacked' : p;   // its first name
+  }
   function wantMode() {
     var p = pref(), W = window.innerWidth, H = window.innerHeight;
-    if (p === 'tablet' || p === 'portrait') return p;
+    if (p === 'tablet') return p;
+    if (p === 'stacked') return 'portrait';
     if (p === 'classic') return false;
     if (W >= 1000 && W > H) return 'tablet';
     if (W >= 700 && H > W) return 'portrait';
@@ -153,21 +161,33 @@
     // none, so shrink the frame until that band is gone.
     if (midH > 2) { itemsH = Math.max(120, Math.round(itemsH - midH + 1)); placePortrait(); }
   }
-  function mapEach(z) { return Math.floor(Math.min((z.W - MAP_GAP) / 2, z.H * 0.45)); }
+  // Upright: maps side by side across the bottom. Landscape: maps stacked in
+  // a column on the right, with the game and the items + dungeons on the left.
+  function sideMaps(z) { return z.W > z.H; }
+  function mapEach(z) {
+    return sideMaps(z) ? Math.floor(Math.min((z.H - MAP_GAP) / 2, z.W * 0.42))
+                       : Math.floor(Math.min((z.W - MAP_GAP) / 2, z.H * 0.45));
+  }
   function placePortrait() {
     var z = size();
     if (!z.W || !z.H) return;
-    var each = mapEach(z);
-    var gameH = Math.max(120, z.H - itemsH - each);
+    var each = mapEach(z), side = sideMaps(z);
+    var colW = side ? z.W - each - MAP_GAP : z.W;              // game + items column
+    var gameH = Math.max(120, z.H - itemsH - (side ? 0 : each));
     var it = $('tab-items'), m = $('tab-map'), gw = $('game-wrap');
     it.style.transform = ''; it.style.left = '0px'; it.style.top = gameH + 'px';
-    it.style.width = z.W + 'px'; it.style.height = itemsH + 'px';
-    m.style.left = '0px'; m.style.top = (gameH + itemsH) + 'px';
-    m.style.width = z.W + 'px'; m.style.height = each + 'px';
-    gw.style.left = '0px'; gw.style.top = '0px'; gw.style.width = z.W + 'px'; gw.style.height = gameH + 'px';
+    it.style.width = colW + 'px'; it.style.height = itemsH + 'px';
+    if (side) {
+      m.style.left = (colW + MAP_GAP) + 'px'; m.style.top = '0px';
+      m.style.width = each + 'px'; m.style.height = z.H + 'px';
+    } else {
+      m.style.left = '0px'; m.style.top = (gameH + itemsH) + 'px';
+      m.style.width = z.W + 'px'; m.style.height = each + 'px';
+    }
+    gw.style.left = '0px'; gw.style.top = '0px'; gw.style.width = colW + 'px'; gw.style.height = gameH + 'px';
     fitPortraitMap();
-    if (gw.__lastW !== z.W || gw.__lastH !== gameH) {
-      gw.__lastW = z.W; gw.__lastH = gameH;
+    if (gw.__lastW !== colW || gw.__lastH !== gameH) {
+      gw.__lastW = colW; gw.__lastH = gameH;
       window.dispatchEvent(new Event('resize'));
     }
   }
@@ -176,7 +196,7 @@
     '#topbar,#bottombar{display:none!important}' +
     '#maps-outer{padding:0!important;margin:0!important;height:100vh!important;display:flex!important;' +
     'align-items:center;justify-content:center;overflow:hidden!important}' +
-    '#maps{display:flex!important;flex-direction:row!important;gap:' + MAP_GAP + 'px!important;margin:0!important}' +
+    '#maps{display:flex!important;gap:' + MAP_GAP + 'px!important;margin:0!important}' +
     '#settings-wrap{position:fixed!important;top:4px;right:4px;z-index:50}' +
     '#settings-panel{max-height:calc(100vh - 40px);overflow-y:auto}';
   var PORTRAIT_ITEMS_CSS =
@@ -195,7 +215,8 @@
     var f = $('tab-map'), d, w;
     try { d = f.contentDocument; w = f.contentWindow; } catch (e) { return; }
     if (!d || !d.getElementById('maps')) return;
-    var each = mapEach(size());
+    var z = size(), each = mapEach(z);
+    d.getElementById('maps').style.flexDirection = sideMaps(z) ? 'column' : 'row';
     d.querySelectorAll('.map-wrap').forEach(function (el) { el.style.width = el.style.height = each + 'px'; });
     var pct = each / 5.12;   // markers shrink with the map below 100%, as Hutch does
     d.documentElement.style.setProperty('--mk', pct < 100 ? (pct / 100).toFixed(3) : '1');
