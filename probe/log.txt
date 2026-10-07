@@ -1,0 +1,11 @@
+total 224
+drwxr-xr-x 2 runner runner   4096 Oct  7 16:27 .
+drwxr-xr-x 9 runner runner   4096 Oct  7 16:27 ..
+-rw-r--r-- 1 runner runner    263 Oct  7 16:27 001.link.1.zspr
+-rw-r--r-- 1 runner runner    534 Oct  7 16:27 001.link.1.zspr.png
+-rw-r--r-- 1 runner runner  28883 Oct  7 16:27 abigail.1.zspr
+-rw-r--r-- 1 runner runner    533 Oct  7 16:27 abigail.1.zspr.png
+-rw-r--r-- 1 runner runner      0 Oct  7 16:27 log.txt
+-rw-r--r-- 1 runner runner 138002 Oct  7 16:27 sprites.json
+-rw-r--r-- 1 runner runner  28886 Oct  7 16:27 zora.2.zspr
+-rw-r--r-- 1 runner runner    566 Oct  7 16:27 zora.2.zspr.png
