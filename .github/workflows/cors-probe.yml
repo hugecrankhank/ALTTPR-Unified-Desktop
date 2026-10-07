@@ -1,7 +1,7 @@
 name: cors-probe
 on:
   push:
-    branches: [cors-probe]
+    branches: [probe-previews]
 permissions:
   contents: write
 jobs:
