@@ -1,0 +1,38 @@
+alttpr-patches.s3.us-east-2.amazonaws.com -> 403 <?xml version="1.0" encoding="UTF-8"?><Error><Code>AccessDenied</Code><Message>Access Denied</Message><RequestId>WDZPJ7RT04NZCHMG</RequestId><HostId>NymGKKjHFN
+alttpr-patches.s3.amazonaws.com -> 403 <?xml version="1.0" encoding="UTF-8"?><Error><Code>AccessDenied</Code><Message>Access Denied</Message><RequestId>WDZWDQZJXSWX1NQ0</RequestId><HostId>hEOwVjzPa7
+alttpr-seeds.s3.us-east-2.amazonaws.com -> 404 <?xml version="1.0" encoding="UTF-8"?><Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message><BucketName>alttpr-seeds</BucketNam
+alttpr-seeds.s3.amazonaws.com -> 404 <?xml version="1.0" encoding="UTF-8"?><Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message><BucketName>alttpr-seeds</BucketNam
+alttpr-patch.s3.us-east-2.amazonaws.com -> 404 <?xml version="1.0" encoding="UTF-8"?><Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message><BucketName>alttpr-patch</BucketNam
+alttpr-patch.s3.amazonaws.com -> 404 <?xml version="1.0" encoding="UTF-8"?><Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message><BucketName>alttpr-patch</BucketNam
+alttpr.s3.us-east-2.amazonaws.com -> 403 <?xml version="1.0" encoding="UTF-8"?><Error><Code>AccessDenied</Code><Message>Access Denied</Message><RequestId>F2Z6684MV8SRJQQ4</RequestId><HostId>7T4yyP2mEc
+alttpr.s3.amazonaws.com -> 403 <?xml version="1.0" encoding="UTF-8"?><Error><Code>AccessDenied</Code><Message>Access Denied</Message><RequestId>1QHCSNWHQNHGY4QD</RequestId><HostId>FNDSHcEUJ0
+alttpr-hashes.s3.us-east-2.amazonaws.com -> 404 <?xml version="1.0" encoding="UTF-8"?><Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message><BucketName>alttpr-hashes</BucketNa
+alttpr-hashes.s3.amazonaws.com -> 404 <?xml version="1.0" encoding="UTF-8"?><Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message><BucketName>alttpr-hashes</BucketNa
+alttpr-seed.s3.us-east-2.amazonaws.com -> 404 <?xml version="1.0" encoding="UTF-8"?><Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message><BucketName>alttpr-seed</BucketName
+alttpr-seed.s3.amazonaws.com -> 404 <?xml version="1.0" encoding="UTF-8"?><Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message><BucketName>alttpr-seed</BucketName
+alttpr-games.s3.us-east-2.amazonaws.com -> 404 <?xml version="1.0" encoding="UTF-8"?><Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message><BucketName>alttpr-games</BucketNam
+alttpr-games.s3.amazonaws.com -> 404 <?xml version="1.0" encoding="UTF-8"?><Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message><BucketName>alttpr-games</BucketNam
+alttpr-storage.s3.us-east-2.amazonaws.com -> 404 <?xml version="1.0" encoding="UTF-8"?><Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message><BucketName>alttpr-storage</BucketN
+alttpr-storage.s3.amazonaws.com -> 404 <?xml version="1.0" encoding="UTF-8"?><Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message><BucketName>alttpr-storage</BucketN
+alttpr-prod.s3.us-east-2.amazonaws.com -> 404 <?xml version="1.0" encoding="UTF-8"?><Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message><BucketName>alttpr-prod</BucketName
+alttpr-prod.s3.amazonaws.com -> 404 <?xml version="1.0" encoding="UTF-8"?><Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message><BucketName>alttpr-prod</BucketName
+alttpr-production.s3.us-east-2.amazonaws.com -> 404 <?xml version="1.0" encoding="UTF-8"?><Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message><BucketName>alttpr-production</Buck
+alttpr-production.s3.amazonaws.com -> 404 <?xml version="1.0" encoding="UTF-8"?><Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message><BucketName>alttpr-production</Buck
+vt-patches.s3.us-east-2.amazonaws.com -> 404 <?xml version="1.0" encoding="UTF-8"?><Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message><BucketName>vt-patches</BucketName>
+vt-patches.s3.amazonaws.com -> 404 <?xml version="1.0" encoding="UTF-8"?><Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message><BucketName>vt-patches</BucketName>
+alttpr-randomizer.s3.us-east-2.amazonaws.com -> 404 <?xml version="1.0" encoding="UTF-8"?><Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message><BucketName>alttpr-randomizer</Buck
+alttpr-randomizer.s3.amazonaws.com -> 404 <?xml version="1.0" encoding="UTF-8"?><Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message><BucketName>alttpr-randomizer</Buck
+== bps on alttpr-assets?
+403
+403
+== base bps for current build
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>ALttP VT Randomizer</title>
+    <meta name="csrf-token" content="">
+    <meta name="keywords" content="ALttP, Randomizer, patcher">
+    <meta name="description" content="ALttP Web VT Randomizer">
+    <meta charset="utf-8" />
+    <link rel="styleshee
+base_file None
