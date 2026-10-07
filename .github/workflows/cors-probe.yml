@@ -10,30 +10,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          mkdir -p probe2 && cd probe2
+          mkdir -p probe3 && cd probe3
           exec > log.txt 2>&1
           set +e
           O="Origin: https://hugecrankhank.github.io"
           H=ry08NzXzy5
-          for u in https://alttpr.com/hash/$H https://alttpr.com/api/h/$H; do
-            echo "== GET $u"; curl -sS -D - -o "$(basename $(dirname $u))_$(basename $u).json" -H "$O" "$u" | grep -i -E "^HTTP|access-control|content-type|^vary"
-            echo "== OPTIONS $u"; curl -sS -D - -o /dev/null -X OPTIONS -H "$O" -H "Access-Control-Request-Method: GET" "$u" | grep -i -E "^HTTP|access-control"
+          for b in alttpr-patches alttpr-seeds alttpr-patch alttpr alttpr-hashes alttpr-seed alttpr-games alttpr-storage alttpr-prod alttpr-production vt-patches alttpr-randomizer; do
+            for r in s3.us-east-2.amazonaws.com s3.amazonaws.com; do
+              code=$(curl -s -o /tmp/body -w "%{http_code}" -H "$O" "https://$b.$r/$H.json"); body=$(head -c 160 /tmp/body | tr -d '\n')
+              echo "$b.$r -> $code $body"
+            done
           done
-          python3 - <<'PY'
-          import json
-          for f in ['hash_ry08NzXzy5.json', 'h_ry08NzXzy5.json']:
-              try:
-                  d = json.load(open(f))
-                  print(f, 'keys:', sorted(d.keys()) if isinstance(d, dict) else type(d))
-                  for k in ('md5','bpsLocation','size','hash','generated','current_rom_hash'):
-                      if isinstance(d, dict) and k in d: print('  ', k, '=', d[k])
-                  if isinstance(d, dict) and 'patch' in d: print('   patch entries', len(d['patch']), 'first', str(d['patch'][0])[:80])
-                  if isinstance(d, dict) and 'spoiler' in d: print('   spoiler keys', list(d['spoiler'].keys())[:12], 'meta', json.dumps(d['spoiler'].get('meta', {}))[:600])
-              except Exception as e: print(f, 'ERR', e, open(f).read()[:300])
-          PY
-          B=$(python3 -c "import json;print(json.load(open('h_ry08NzXzy5.json')).get('bpsLocation',''))")
-          echo "bps: $B"
-          [ -n "$B" ] && { echo "== GET bps"; curl -sS -D - -o base.bps -H "$O" "https://alttpr.com$B" | grep -i -E "^HTTP|access-control|content-type|location"; ls -la base.bps; }
+          echo "== bps on alttpr-assets?"; curl -s -o /dev/null -w "%{http_code}\n" https://alttpr-assets.s3.us-east-2.amazonaws.com/bps/79bbb4ad512838ab01fc06b7971f656c.bps
+          curl -s -o /dev/null -w "%{http_code}\n" https://alttpr-assets.s3.us-east-2.amazonaws.com/79bbb4ad512838ab01fc06b7971f656c.bps
+          echo "== base bps for current build"; curl -s https://alttpr.com/api/randomizer/settings 2>/dev/null | head -c 300; echo
+          curl -s https://alttpr.com/randomizer/settings | python3 -c "import json,sys; d=json.load(sys.stdin); print('base_file', d.get('base_file'))"
       - run: |
           git config user.name probe; git config user.email probe@example.com
-          git add -A probe2; git commit -m "probe: alttpr seed api"; git push
+          git add -A probe3; git commit -m "probe: buckets"; git push
