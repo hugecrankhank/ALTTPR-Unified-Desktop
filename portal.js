@@ -103,6 +103,9 @@
     if (this.doc === d && w.__unifiedReady) return true;
     this.win = w; this.doc = d;
     this.gen = ++gens;
+    // The pieces belonged to the page that's gone; until the new ones are
+    // found (desktop.js), there's nothing to place.
+    this.pieces = null; this.bars = []; this.structural = [];
     this.portals = [];
     this.active = { doc: d, at: 0 };
     w.__unifiedRoots = [];
@@ -140,7 +143,26 @@
   Engine.prototype.trackActive = function (doc) {
     var self = this;
     ACTIVE.forEach(function (t) {
-      doc.addEventListener(t, function () { self.active = { doc: doc, at: Date.now() }; }, true);
+      doc.addEventListener(t, function () {
+        self.active = { doc: doc, at: Date.now() };
+        if (doc === self.doc) self.sweep();
+      }, true);
+    });
+  };
+
+  // Safety net: a pop-up left in a window that has since closed (the hover
+  // card, a menu) would be stuck there, and the tracker reuses it. Bring any
+  // such back as soon as the main window is used.
+  Engine.prototype.sweep = function () {
+    if (!this.win || !this.win.__unifiedRoots) return;
+    var now = Date.now();
+    if (now - (this._swept || 0) < 300) return;
+    this._swept = now;
+    var self = this, d = this.doc, roots = this.win.__unifiedRoots;
+    roots.slice().forEach(function (r) {
+      if (r.__uPlace || self.alive(r.ownerDocument)) return;
+      try { (r.__uHtml ? d.documentElement : d.body).appendChild(r); } catch (e) {}
+      var i = roots.indexOf(r); if (i >= 0) roots.splice(i, 1);
     });
   };
 

@@ -228,10 +228,26 @@
     closeEmpty(); save(); sync();
   }
 
+  // Before a window goes: its pieces and any menu or hover card in it come
+  // back to the main window, while its page still exists.
+  function release(w) {
+    var pd = null;
+    try { pd = w && !closed(w) && w.UnifiedPortalHost && w.UnifiedPortalHost.doc(); } catch (e) {}
+    if (!pd) return;
+    ['items', 'map'].forEach(function (kind) {
+      var e = engines[kind];
+      if (!e || !e.pieces) return;
+      ORDER.forEach(function (p) { if (e.pieces[p] && e.where(e.pieces[p]) === pd) e.detach(e.pieces[p]); });
+      (e.bars || []).forEach(function (b) { if (b.el && b.el.ownerDocument === pd) e.detach(b); });
+      e.rescue(pd);
+    });
+  }
+
   function closeEmpty() {
     Object.keys(wins).forEach(function (id) {
       if (piecesIn(id).length) return;
       var r = wins[id];
+      release(r.win);
       delete wins[id];
       if (r.win && !closed(r.win)) { try { r.win.close(); } catch (e) {} }
     });
@@ -294,17 +310,11 @@
   // The window is closing or reloading: bring its pieces and pop-ups home
   // now, while its page still exists. If it reloads, it claims them back.
   function leaving(id, w) {
+    // (also for a window this page has already let go of: whatever is
+    // still in it comes home)
+    release(w);
     var r = wins[id];
-    if (!r || r.win !== w) return;
-    var pd = null;
-    try { pd = w.UnifiedPortalHost && w.UnifiedPortalHost.doc(); } catch (e) {}
-    var e = engines[r.tracker];
-    if (e && e.pieces) {
-      ORDER.forEach(function (p) { if (e.pieces[p] && e.where(e.pieces[p]) === pd) e.detach(e.pieces[p]); });
-      e.bars.forEach(function (b) { if (b.el && b.el.ownerDocument === pd) e.detach(b); });
-      if (pd) e.rescue(pd);
-    }
-    r.gone = Date.now();
+    if (r && r.win === w) r.gone = Date.now();
     paint();
   }
   // The tracker's settings, opened from a window's toolbar.
@@ -468,6 +478,7 @@
         place = {};
         Object.keys(wins).forEach(function (id) {
           var r = wins[id];
+          release(r.win);
           if (r.win && !closed(r.win)) { try { r.win.close(); } catch (e) {} }
         });
         wins = {}; save();
