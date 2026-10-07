@@ -1,0 +1,22 @@
+name: cors-probe
+on:
+  push:
+    branches: [cors-probe]
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          O="Origin: https://hugecrankhank.github.io"
+          echo "== list"; curl -sS -D - -o list.json -H "$O" https://alttpr.com/sprites | grep -i -E "^HTTP|access-control|content-type"
+          echo "entries: $(python3 -c 'import json;print(len(json.load(open("list.json"))))')"
+          echo "== zspr"; curl -sS -D - -o /dev/null -H "$O" https://alttpr-assets.s3.us-east-2.amazonaws.com/abigail.1.zspr | grep -i -E "^HTTP|access-control|content-length"
+          echo "== png";  curl -sS -D - -o /dev/null -H "$O" https://alttpr-assets.s3.us-east-2.amazonaws.com/abigail.1.zspr.png | grep -i -E "^HTTP|access-control|content-length"
+          echo "== preflight-ish GET list with Origin alttpr"; curl -sS -D - -o /dev/null -H "Origin: https://alttpr.com" https://alttpr-assets.s3.us-east-2.amazonaws.com/abigail.1.zspr | grep -i access-control
+          python3 - <<'PY'
+          import json; d=json.load(open('list.json'))
+          import collections
+          print('usage counts', collections.Counter(u for s in d for u in s.get('usage',[])))
+          print('keys', sorted({k for s in d for k in s}))
+          print(json.dumps(d[-1]))
+          PY
