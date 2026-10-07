@@ -129,8 +129,11 @@
   #sprite-lib.busy #sl-grid { opacity: .6; pointer-events: none; }
   #sprite-lib .sl-note { padding: 8px 12px; border-top: 1px solid var(--line); font-size: 12px; color: var(--dim); }
   #r-toggle[aria-expanded=true] { border-color: var(--accent); }
-  #r-toggle::after { content: ' \25BE'; color: var(--dim); }
-  #r-toggle[aria-expanded=true]::after { content: ' \25B4'; }
+  /* the same chevron as the dropdowns beside it; it points up while open */
+  #r-toggle::after { content: ''; display: inline-block; width: 10px; height: 6px; margin-left: 10px;
+    vertical-align: 2px; background: no-repeat center / contain
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23e6e9ee' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+  #r-toggle[aria-expanded=true]::after { transform: rotate(180deg); }
 
   main { display: grid; grid-template-columns: minmax(0, 1fr) auto; min-height: 0; grid-row: 3; }
   #game-wrap { position: relative; min-height: 0; display: flex; align-items: center; justify-content: center;

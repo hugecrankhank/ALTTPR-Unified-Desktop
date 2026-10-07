@@ -110,7 +110,7 @@ work without touching Hutch's code:
 
 The settings bar under the header folds away when a game starts, and again whenever
 you go back to playing with it open: a click on the game, a controller button, or a
-game key (typing in its boxes doesn't count). **Randomizer ▾** at the top left
+game key (typing in its boxes doesn't count). **Randomizer** at the top left
 brings it back.
 
 ## Seed links and races
