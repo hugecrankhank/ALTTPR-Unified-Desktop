@@ -5,7 +5,7 @@ import { parseSprite, applySprite, drawHead, drawSheet } from './sprite.js';
 import { MsuPlayer, trackNumber } from './msu.js';
 import { buildLink, readLink, clearLink, codeForSeed, codeFromRom, codeNames, renderCode, PARAMS } from './share.js';
 import { openLibrary, fetchSprite, labelOf, isPlainLink } from './library.js';
-import { relayUrl, setRelayUrl, alttprId, fetchAlttprSeed, baseFor, patchSeed } from './remote.js';
+import { relayUrl, ownRelay, setRelayUrl, DEFAULT_RELAY, alttprId, fetchAlttprSeed, baseFor, patchSeed } from './remote.js';
 
 const msu = new MsuPlayer();
 
@@ -672,11 +672,13 @@ export function init() {
     e.preventDefault();
     loadPasted(text);
   });
-  $('r-relay').value = relayUrl();
+  // empty = the built-in relay; a value = the player's own
+  $('r-relay').placeholder = DEFAULT_RELAY.replace(/^https:\/\//, '');
+  $('r-relay').value = ownRelay();
   $('r-relay').addEventListener('change', () => {
     setRelayUrl($('r-relay').value);
-    $('r-relay').value = relayUrl();
-    status(relayUrl() ? 'Relay saved. alttpr.com seeds can be loaded now.' : 'Relay removed.', 'ok');
+    $('r-relay').value = ownRelay();
+    status(ownRelay() ? 'Using your own relay for alttpr.com seeds.' : 'Using the built-in relay for alttpr.com seeds.', 'ok');
   });
   $('r-share').addEventListener('click', () => copyLink(false));
   $('r-share-race').addEventListener('click', () => copyLink(true));

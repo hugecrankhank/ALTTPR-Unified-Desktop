@@ -153,13 +153,16 @@ Enter. Pasting a link anywhere on the page (outside a text box) works too.
   five-item code is read from the seed. **Share seed** copies its alttpr.com link.
   Base patches for other versions are downloaded once and kept.
 
-### Loading alttpr.com seeds: the relay (one-time setup)
+### Loading alttpr.com seeds: the relay
 
 alttpr.com doesn't let web pages on other sites read its seeds, so the app asks a
-small relay you run for free on Cloudflare, and the relay asks alttpr.com.
-`relay/worker.js` is the whole thing: it only passes on alttpr.com seeds (the seed,
-its base ROM version and that version's base patch), only for this app's pages, and
-only reads.
+small relay, and the relay asks alttpr.com. `relay/worker.js` is the whole thing: it
+only passes on alttpr.com seeds (the seed, its base ROM version and that version's
+base patch), only for this app's pages, and only reads. It keeps each seed for a day,
+so a race where everyone loads the same seed asks alttpr.com once.
+
+The app uses a built-in relay (`alttpr-relay.hugecrankhank.workers.dev`, a Cloudflare
+Worker on the free plan), so it works with no setup. To use your own instead:
 
 1. Make a free account at [dash.cloudflare.com](https://dash.cloudflare.com).
 2. Go to **Workers & Pages → Create → Create Worker**, name it (e.g. `alttpr-relay`)
@@ -168,10 +171,10 @@ only reads.
    press **Deploy** again.
 4. Copy the worker's address (`https://alttpr-relay.<your-name>.workers.dev`).
 5. In the app: **Randomizer → ROM options → alttpr.com relay**, paste the address,
-   and click elsewhere to save it.
+   and click elsewhere to save it. Empty that box to go back to the built-in relay.
 
 If you host the app somewhere other than `hugecrankhank.github.io`, add that address
-to `ALLOWED` at the top of the worker.
+to `ALLOWED` at the top of the worker (the built-in relay only serves that site).
 
 ## Sprites
 

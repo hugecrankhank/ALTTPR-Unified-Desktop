@@ -12,10 +12,14 @@ import { md5 } from './md5.js';
 import { applyBps } from './bps.js';
 
 const RELAY_KEY = 'unified-desktop-relay';
+// The relay everyone uses unless they set their own (ROM options).
+export const DEFAULT_RELAY = 'https://alttpr-relay.hugecrankhank.workers.dev';
 
-export function relayUrl() {
+// The player's own relay, if they set one ('' if not).
+export function ownRelay() {
   try { return (localStorage.getItem(RELAY_KEY) || '').trim().replace(/\/+$/, ''); } catch (e) { return ''; }
 }
+export function relayUrl() { return ownRelay() || DEFAULT_RELAY; }
 export function setRelayUrl(u) {
   try {
     u = String(u || '').trim().replace(/\/+$/, '');
