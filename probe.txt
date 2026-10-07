@@ -1,0 +1,26 @@
+== list
+HTTP/2 200 
+content-type: application/json
+entries: 513
+== zspr
+HTTP/1.1 200 OK
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET
+Access-Control-Max-Age: 3000
+Vary: Origin, Access-Control-Request-Headers, Access-Control-Request-Method
+Content-Length: 28883
+== png
+HTTP/1.1 200 OK
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET
+Access-Control-Max-Age: 3000
+Vary: Origin, Access-Control-Request-Headers, Access-Control-Request-Method
+Content-Length: 533
+== preflight-ish GET list with Origin alttpr
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET
+Access-Control-Max-Age: 3000
+Vary: Origin, Access-Control-Request-Headers, Access-Control-Request-Method
+usage counts Counter({'smz3': 501, 'commercial': 215})
+keys ['author', 'file', 'name', 'preview', 'tags', 'usage', 'version']
+{"name": "Zora", "author": "Zarby, InTheBeef", "version": 2, "file": "https://alttpr-assets.s3.us-east-2.amazonaws.com/zora.2.zspr", "preview": "https://alttpr-assets.s3.us-east-2.amazonaws.com/zora.2.zspr.png", "tags": ["ALTTP NPC", "Legend of Zelda"], "usage": ["smz3", "commercial"]}
