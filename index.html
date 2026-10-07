@@ -145,9 +145,16 @@
     border-left: 1px solid var(--line); touch-action: none; }
   body.desktop #dock-split:hover { background: #22303f; }
   body.desktop aside { border-left: 0; }
-  body.desktop.items-out aside .tabs, body.desktop.map-out aside .tabs { display: none; }
-  body.desktop.all-out aside, body.desktop.all-out #dock-split { display: none; }
-  body.desktop.all-out main { grid-template-columns: minmax(0, 1fr); }
+  /* The trackers keep running while all their pieces are in other windows
+     (desktop.js, portal.js), so their frames shrink away rather than being
+     hidden with display:none. */
+  body.desktop aside .tabs { display: none; }
+  body.desktop #items-wrap { flex: none; }
+  body.desktop.items-away #items-wrap { height: 0 !important; visibility: hidden; }
+  body.desktop.map-away #map-frame { flex: 0 0 0 !important; height: 0 !important; visibility: hidden; }
+  body.desktop.all-away main { grid-template-columns: minmax(0, 1fr) 0 0; }
+  body.desktop.all-away aside { width: 0; overflow: hidden; }
+  body.desktop.all-away #dock-split { visibility: hidden; }
   #popup-note { position: fixed; top: 64px; right: 16px; z-index: 50; max-width: 360px; padding: 10px 12px;
     background: #3a2a0c; border: 1px solid var(--warn); border-radius: 8px; color: var(--text); font-size: 13px; }
   /* Game only: just the game, edge to edge, for capture. */
@@ -215,7 +222,9 @@
   <div id="win-bar" role="group" aria-label="Tracker windows">
     <span class="lbl">Pop out</span>
     <button id="pop-items" type="button">&#10697; Items</button>
-    <button id="pop-map" type="button">&#10697; Map</button>
+    <button id="pop-dungeons" type="button">&#10697; Dungeons</button>
+    <button id="pop-light" type="button">&#10697; Light World</button>
+    <button id="pop-dark" type="button">&#10697; Dark World</button>
     <button id="open-broadcast" type="button" title="Hutch's broadcast view: a stream overlay of the items and dungeons">&#128225; Broadcast</button>
     <button id="open-timer" type="button" title="Hutch's timer in its own window">&#9201; Timer</button>
     <button id="game-only-btn" type="button" title="Hide everything but the game, for a clean capture. Esc to come back.">&#9974; Game only</button>
@@ -423,6 +432,7 @@
 
 <script src="bridge/sni-bridge.js"></script>
 <script src="tablet.js"></script>
+<script src="portal.js"></script>
 <script src="desktop.js"></script>
 <script>
 (function () {
@@ -502,6 +512,11 @@
     } catch (e) { return 0; }
   }
   function fitItems() {
+    // Desktop: Hutch's tablet item tracker, sized by desktop.js.
+    if (window.UnifiedDesktop && window.UnifiedDesktop.active()) {
+      $('items-frame').style.width = $('items-frame').style.height = $('items-frame').style.transform = '';
+      return;
+    }
     var wrap = $('items-wrap'), fr = $('items-frame');
     var w = wrap.clientWidth;
     if (!w) return;
@@ -599,13 +614,17 @@
     var w = outer.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
     var h = outer.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
     var gap = 12;
+    // Only the worlds still in this frame (Desktop can pop one out).
+    var here = maps.querySelectorAll('.map-wrap');
+    if (!here.length) return;
     var side = Math.min((w - gap) / 2, h);       // side by side
     var stack = Math.min(w, (h - gap) / 2);      // stacked
-    var vertical = stack > side;
+    if (here.length === 1) side = stack = Math.min(w, h);
+    var vertical = here.length > 1 && stack > side;
     var size = Math.max(120, Math.floor(vertical ? stack : side));
     maps.classList.toggle('vertical', vertical);
     var lbl = d.getElementById('layout-sel'); if (lbl) lbl.value = vertical ? 'vertical' : 'horizontal';
-    d.querySelectorAll('.map-wrap').forEach(function (el) {
+    here.forEach(function (el) {
       el.style.width = size + 'px'; el.style.height = size + 'px';
     });
     outer.style.textAlign = 'center';

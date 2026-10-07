@@ -8,12 +8,12 @@ layouts). What it adds is a **Desktop** layout whose tracker panels can be poppe
 out into windows of their own, to arrange by hand or capture for a stream.
 
 ```
- main window                         pop-out windows (any size, anywhere)
-┌──────────────────┬───────┐        ┌───────────┐  ┌─────────────────────┐
-│                  │ items │  ⧉ →   │   items   │  │ Light W.  │ Dark W. │
-│       game       ├───────┤        └───────────┘  └─────────────────────┘
-│                  │  map  │        the game grows into the space they leave
-└──────────────────┴───────┘
+ main window                        pop-out windows (any size, anywhere, any mix)
+┌──────────────────┬───────┐       ┌──────────┐ ┌──────────────┐ ┌────────┐ ┌────────┐
+│                  │ items │       │  items   │ │   dungeons   │ │ Light  │ │  Dark  │
+│       game       ├───────┤  ⧉ →  └──────────┘ └──────────────┘ │ World  │ │ World  │
+│                  │  map  │                                     └────────┘ └────────┘
+└──────────────────┴───────┘       the game grows into the space they leave
 ```
 
 ## Desktop layout and pop-out windows
@@ -21,32 +21,43 @@ out into windows of their own, to arrange by hand or capture for a stream.
 - **Layout → Auto** picks *Desktop* on a computer with a mouse or trackpad (window
   wider than 900px) and the tablet layouts on touch screens. *Desktop* can also be
   picked directly.
-- **Pop out → Items / Map** opens that panel in its own window. It keeps tracking
-  live, and clicks on it (marking items, checks, prizes) work exactly as they do
-  docked. The game grows into the space it leaves; with both out, the main window
-  is just the game.
-- **Put a panel back:** close its window, press **Dock** in its toolbar, or click its
-  (green) **Pop out** button again.
-- **Window toolbar:** it appears while the mouse moves over a pop-out and fades out
-  after a moment, so a capture shows only the tracker.
-  - *Show* (map): both worlds, Light World only, or Dark World only.
-  - *Arrange* (map): side by side, stacked, or whichever fits the window best.
+- **Pop out → Items / Dungeons / Light World / Dark World** opens that piece in a
+  window of its own. All four can be out at once, each in its own window, or
+  combined: tick another piece in a window's options to bring it into that window
+  (both worlds in one map window, say). Everything keeps tracking live, and clicks
+  work the same everywhere: marking items, cycling prizes, checks, the dungeon hover
+  card, menus and settings. The game grows into the space pieces leave; with all
+  four out, the main window is just the game.
+- **Put a piece back:** untick it in its window's options, close its window, press
+  **Dock** there, or click its (green) **Pop out** button again.
+- **Window options:** a small ☰ appears in the corner while the mouse moves over a
+  pop-out; point at it for the options. Otherwise the window shows only the tracker,
+  ready to capture.
+  - The pieces in this window, and the ones that could join it.
+  - *Arrange* (both worlds): side by side, stacked, or whichever fits best.
+  - *Item rows:* how many rows the items wrap onto, or whichever fits best.
   - *Background:* the tracker's own, black, or green/blue/magenta for an OBS
     Chroma Key filter.
-  - *Fit:* the tracker grows or shrinks with the window. Off: the tracker's own
-    size and zoom buttons.
-  - *Clean:* hides the tracker's own menu bars. ⚙ still opens its settings.
-  - 📌 keeps the toolbar showing.
-- Each window remembers its size, position and options.
+  - *Fit:* the pieces grow or shrink with the window.
+  - *Clean:* hides the tracker's menu bars, in the window that has them (see below).
+  - ⚙ opens the tracker's settings in this window. 📌 keeps the options showing.
+- **Menu bars** (the item tracker's bottom bar; the map's top and bottom bars) stay
+  in the main window while any piece of that tracker is there, and otherwise go to
+  the window with its first piece.
+- Each window remembers its size, position and options, and reconnects by itself
+  when the main window reloads (a new ROM).
 - **Broadcast** and **Timer** open Hutch's own broadcast view (a stream overlay of
   items and dungeons) and timer, connected to the game the same way.
 - **Game only** hides everything but the game, edge to edge, for capture. Esc (or
   *Show trackers* at the top right) brings it back.
 - **Resize the tracker column** by dragging its left edge; double-click to reset.
+- In Desktop the item tracker uses Hutch's tablet arrangement (items in rows, then
+  a row of prize counts and dungeons), which is what lets the items and the dungeons
+  go to separate windows.
 
-**Capturing in OBS:** add a *Window Capture* per window (they're titled
-*ALTTPR Items* and *ALTTPR Map*). Use a solid background plus a *Chroma Key* filter
-to drop the background.
+**Capturing in OBS:** add a *Window Capture* per window. They're titled by what
+they hold (*ALTTPR Items*, *ALTTPR Dungeons*, *ALTTPR Light World + Dark World*…).
+Use a solid background plus a *Chroma Key* filter to drop the background.
 
 Things to know:
 
@@ -58,16 +69,32 @@ Things to know:
 - **Keep the game window at least partly visible.** Browsers slow a fully hidden or
   minimized window down, and the game with it. (The game isn't paused when the
   window is covered.)
-- **Popping a panel out or back in restarts that tracker.** Everything read from the
-  game comes back within a second; a manual mark on an item the game doesn't track
-  is reset. The same happens to all trackers when a new ROM is loaded.
-- **One copy of each panel.** Hutch's tracker expects one item tracker and one map;
-  two copies of either would disagree after a manual click. So a panel lives either
-  in the main window or in its window, never both. Splitting the items from the
-  dungeons, or the two worlds into windows open at the same time, needs a sync
-  layer between copies and is the next step.
+- **Closing the main window** leaves the pop-outs showing their last state; open the
+  app again and pop pieces out from there.
 - Settings, ROMs, sprites and MSU packs are stored separately from the other
   editions, so they can be used side by side.
+
+### How the pieces stay in step
+
+There's only ever one item tracker and one map. Hutch's tracker can't run as two
+copies: its autotracking applies only what changed in game memory since its own
+last read, so two copies a moment out of step could disagree for good, and each
+would send the map its own item list. So both trackers keep running in the main
+window, and popping a piece out moves that piece's live page elements into the
+pop-out window (`portal.js`). The tracker keeps updating them and their click
+handlers keep working, so nothing needs syncing and nothing restarts. To make that
+work without touching Hutch's code:
+
+- his `document.getElementById` / `querySelector` lookups are widened to also find
+  pieces that are in other windows;
+- his stylesheets and the classes on his `<html>` / `<body>` are copied to each
+  pop-out and kept current, and the containers a world sat in are recreated around
+  it;
+- handlers he put on the whole page (closing a menu on an outside click, the
+  dungeon hover card, hotkeys) are added to each pop-out too
+  (`bridge/sni-shim.js` records them as he registers them);
+- a menu, hover card, tooltip or settings panel he opens appears in the window you
+  were using when it opened.
 
 ### The tablet layouts (from the iPad edition)
 
@@ -107,7 +134,7 @@ index.html  (desktop.js: Desktop layout, pop-outs; tablet.js: tablet layouts)
 ├── EmulatorJS (snes9x core, from cdn.emulatorjs.org)
 ├── bridge/sni-bridge.js   ← reads emulator memory, speaks usb2snes addresses
 ├── <iframe> tracker/itemtracker.html, tracker/map.html   (Hutch, unmodified)
-└── pop-out windows: popout.html → <iframe> the same tracker page
+└── pop-out windows: popout.html → portal.html, holding pieces moved from those
         └── bridge/sni-shim.js  ← swaps WebSocket for an in-page fake SNI
 ```
 
@@ -124,15 +151,10 @@ index.html  (desktop.js: Desktop layout, pop-outs; tablet.js: tablet layouts)
    Because Hutch thinks it's talking to SNI, its tracker code is untouched,
    so upstream tracker updates can be dropped straight into `tracker/`.
 
-A pop-out window (`popout.html`) holds the same tracker page in a frame. The
-shim looks for `AlttpBridge` through the frame's parent and then that window's
-`opener`, the main page, so a popped-out tracker reads the game exactly like a
-docked one. Hutch's windows already talk to each other over one
-`BroadcastChannel` (`alttp-tracker`), which works across all windows of the site,
-so the item tracker and map stay in step wherever each one is. `desktop.js`
-keeps one copy of each panel and handles docking; each pop-out asks the main
-page once a second which tracker to show, which is also how it reconnects after
-the main page reloads for a new ROM.
+In the Desktop layout (`desktop.js`, `portal.js`, `popout.html`), pop-out
+windows show pieces of the two trackers that run in the main page; see *How the
+pieces stay in step* above. Each pop-out asks the main page once a second what it
+holds, which is also how it reconnects after the main page reloads for a new ROM.
 
 The only change to the Hutch files is one `<script>` line at the top of
 `itemtracker.html`, `map.html`, `timer.html` and `broadcast.html`. Opened

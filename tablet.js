@@ -341,25 +341,28 @@
       $('tab-map').src = on === 'portrait' ? urls.map : withMobile(urls.map);
     } else {
       ['tab-items', 'tab-map'].forEach(function (id) { $(id).src = blank; });
-      // A panel popped out into its own window isn't loaded here as well
-      // (desktop.js): Hutch's tracker expects one copy of each.
+      // Desktop (desktop.js) loads them its own way.
       var D = window.UnifiedDesktop;
-      $('items-frame').src = D && D.isOut('items') ? blank : urls.items;
-      $('map-frame').src = D && D.isOut('map') ? blank : urls.map;
+      if (D && D.active()) D.loadFrames(urls);
+      else { $('items-frame').src = urls.items; $('map-frame').src = urls.map; }
     }
   }
 
+  var desk = false;
   function syncDesktop(t) {
-    var d = !t && wantDesktop();
+    var d = !t && wantDesktop(), changed = d !== desk;
+    desk = d;
     document.body.classList.toggle('desktop', d);
     if (window.UnifiedDesktop) window.UnifiedDesktop.setActive(d);
+    return changed;
   }
 
   function apply(force) {
     var t = wantMode();
-    // Classic <-> Desktop is the same layout here; desktop.js does the rest.
-    syncDesktop(t);
-    if (t === on && !force) { placeGameSoon(); return; }
+    // Classic <-> Desktop is the same layout here, but Desktop loads the
+    // item tracker in Hutch's tablet arrangement, so the trackers reload.
+    var deskChanged = syncDesktop(t);
+    if (t === on && !force) { if (deskChanged && urls) load(); placeGameSoon(); return; }
     on = t;
     clearGame();
     document.body.classList.toggle('tablet', !!on);

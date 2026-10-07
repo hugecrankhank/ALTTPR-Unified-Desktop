@@ -25,6 +25,32 @@
   }
   if (!findBridge()) return; // standalone use: leave the real WebSocket alone
 
+  // Desktop edition (portal.js): parts of this page can be shown in another
+  // window. Clicks there reach the parts' own listeners, but not the ones this
+  // page put on `document` or `window` (closing a menu on an outside click, the
+  // dungeon hover card, hotkeys). So keep a list of those, for portal.js to
+  // add to the other windows too. Runs before the tracker's own scripts.
+  (function () {
+    var list = window.__unifiedListeners = [];
+    function wrap(target, kind) {
+      var add = target.addEventListener, remove = target.removeEventListener;
+      target.addEventListener = function (type, fn, opts) {
+        list.push({ kind: kind, type: type, fn: fn, opts: opts });
+        try { if (window.__unifiedOnListener) window.__unifiedOnListener(kind, type, fn, opts, true); } catch (e) {}
+        return add.call(this, type, fn, opts);
+      };
+      target.removeEventListener = function (type, fn, opts) {
+        for (var i = list.length - 1; i >= 0; i--) {
+          if (list[i].kind === kind && list[i].type === type && list[i].fn === fn) { list.splice(i, 1); break; }
+        }
+        try { if (window.__unifiedOnListener) window.__unifiedOnListener(kind, type, fn, opts, false); } catch (e) {}
+        return remove.call(this, type, fn, opts);
+      };
+    }
+    wrap(document, 'doc');
+    wrap(window, 'win');
+  })();
+
   function isSniUrl(url) { return /^wss?:\/\/[^/]+:(23074|8080|23070)\b/.test(String(url)); }
 
   function BridgeSocket(url) {
