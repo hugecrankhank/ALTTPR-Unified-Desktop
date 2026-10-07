@@ -51,6 +51,38 @@
     wrap(window, 'win');
   })();
 
+  // The item tracker sets every bottle again on each memory read (about once
+  // a second), even when nothing changed, and repaints the boss circles and
+  // item fills each time. That shows as a flicker (constant with a missing
+  // image). Skip an update that would change nothing: same state, and the
+  // slot already shows its picture. Real changes go straight through.
+  window.addEventListener('load', function () {
+    var orig = window.updateItemState;
+    if (typeof orig !== 'function' || orig.__unifiedSkip) return;
+    var items = null;
+    try { items = (0, eval)('typeof items !== "undefined" ? items : null'); } catch (e) {}
+    if (!items) return;
+    var wrapped = function (itemKey, state) {
+      try {
+        var it = items[itemKey];
+        if (it && !it.isGoMode && it.states && typeof state === 'number') {
+          var s = Math.min(state, it.states.length - 1);
+          if (s === it.currentState) {
+            var want = it.states[s].img;
+            var ov = typeof window.seedFlagOverlay === 'function' ? window.seedFlagOverlay(itemKey, s) : null;
+            if (ov && ov.img) want = ov.img;
+            var slot = document.querySelector('[data-item-key="' + itemKey + '"]');
+            var img = slot && slot.querySelector('img');
+            if (img && img.getAttribute('src') === want) return;
+          }
+        }
+      } catch (e) {}
+      return orig.apply(this, arguments);
+    };
+    wrapped.__unifiedSkip = true;
+    window.updateItemState = wrapped;
+  });
+
   function isSniUrl(url) { return /^wss?:\/\/[^/]+:(23074|8080|23070)\b/.test(String(url)); }
 
   function BridgeSocket(url) {
