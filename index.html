@@ -81,6 +81,11 @@
   #r-status.ok { color: var(--accent); }
   #r-status.bad { color: var(--bad); }
   #r-seed-out { font-size: 12px; color: var(--dim); user-select: all; }
+  #rando-bar .paste-field { display: flex; flex-direction: column; gap: 3px; color: var(--dim); font-size: 11px;
+    text-transform: uppercase; letter-spacing: .04em; }
+  #rando-bar .paste-field { flex: none; }
+  #rando-bar input#r-paste { width: 22em; min-width: 22em; text-transform: none; letter-spacing: 0; }
+  #rando-bar input#r-relay { width: 16em; }
 
   /* seed links (randomizer/share.js) */
   #r-shared { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; flex-basis: 100%;
@@ -390,6 +395,12 @@
     <label class="f">Seed
       <input type="text" id="r-seed" placeholder="random" inputmode="numeric" autocomplete="off" spellcheck="false">
     </label>
+    <div class="f paste-field">Load a seed
+      <div class="sprite-row">
+        <input type="text" id="r-paste" placeholder="Seed link, alttpr.com link, or number" autocomplete="off" spellcheck="false">
+        <button type="button" id="r-paste-go" title="Load and play the seed you pasted">Load</button>
+      </div>
+    </div>
     <div class="f sprite-field">Link sprite
       <div class="sprite-row">
         <button type="button" id="r-sprite-prev" class="sprite-prev" title="Browse the sprite library">
@@ -436,6 +447,9 @@
         </div>
         <span id="r-msu-name">Off</span>
       </div>
+      <label class="f" title="The address of your relay for alttpr.com seeds (see the README: Loading alttpr.com seeds)">alttpr.com relay
+        <input type="url" id="r-relay" placeholder="https://….workers.dev" autocomplete="off" spellcheck="false">
+      </label>
       <label class="f">Item quickswap
         <select id="r-quickswap">
           <option value="off" selected>Off</option>
@@ -534,13 +548,14 @@
     var common = '&gamemode=' + gm + '&dungeonitems=' + di + '&bg=black';
     var mapExtra = '';
     if (trackerExtra) {
-      // seeds from the in-app generator never shuffle bosses or enemies
+      // generated here: never shuffled; alttpr.com seeds: as the seed says
       mapExtra = '&swordless=' + encodeURIComponent(trackerExtra.swordless || 'no')
         + '&gtcrystals=' + encodeURIComponent(trackerExtra.gtcrystals || '7')
-        + '&bossshuffle=no&enemizer=no';
+        + '&bossshuffle=' + encodeURIComponent(trackerExtra.bossshuffle || 'no')
+        + '&enemizer=' + encodeURIComponent(trackerExtra.enemizer || 'no');
     }
     return {
-      items: 'tracker/itemtracker.html?scale=1' + common + (trackerExtra ? '&swordless=' + encodeURIComponent(trackerExtra.swordless || 'no') + '&bossshuffle=no' : ''),
+      items: 'tracker/itemtracker.html?scale=1' + common + (trackerExtra ? '&swordless=' + encodeURIComponent(trackerExtra.swordless || 'no') + '&bossshuffle=' + encodeURIComponent(trackerExtra.bossshuffle || 'no') : ''),
       map: 'tracker/map.html?zoom=0.6&logic=nmg&entranceshuffle=no&entrancemode=none' + common + mapExtra,
     };
   }
@@ -907,7 +922,8 @@
       if (tracker) {
         if (tracker.gamemode && [].some.call($('gamemode').options, function (o) { return o.value === tracker.gamemode; })) $('gamemode').value = tracker.gamemode;
         if (tracker.dungeonitems) $('dungeonitems').value = tracker.dungeonitems;
-        trackerExtra = { swordless: tracker.swordless || 'no', gtcrystals: tracker.gtcrystals || '7' };
+        trackerExtra = { swordless: tracker.swordless || 'no', gtcrystals: tracker.gtcrystals || '7',
+          bossshuffle: tracker.bossshuffle || 'no', enemizer: tracker.enemizer || 'no' };
         saveSettings();
       }
       startRom(bytes, name, true);

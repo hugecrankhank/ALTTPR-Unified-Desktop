@@ -5,6 +5,7 @@ import { parseSprite, applySprite, drawHead, drawSheet } from './sprite.js';
 import { MsuPlayer, trackNumber } from './msu.js';
 import { buildLink, readLink, clearLink, codeForSeed, codeFromRom, codeNames, renderCode, PARAMS } from './share.js';
 import { openLibrary, fetchSprite, labelOf, isPlainLink } from './library.js';
+import { relayUrl, setRelayUrl, alttprId, fetchAlttprSeed, baseFor, patchSeed } from './remote.js';
 
 const msu = new MsuPlayer();
 
@@ -132,11 +133,11 @@ async function buildBaseRom() {
   return { rom, baseOk: sum === BASE_MD5 };
 }
 
-function applyCosmetics(rom) {
+function applyCosmetics(rom, { quickswap = true } = {}) {
   const w = (off, ...b) => b.forEach((v, i) => { rom[off + i] = v; });
   const beep = { off: 0x00, half: 0x40, quarter: 0x80, double: 0x10, normal: 0x20 }[$('r-heartbeep').value] ?? 0x40;
   w(0x180033, beep);
-  w(0x18004B, $('r-quickswap').value === 'on' ? 0x01 : 0x00);
+  w(0x18004B, quickswap && $('r-quickswap').value === 'on' ? 0x01 : 0x00);
   const ms = $('r-menuspeed').value;
   w(0x180048, { instant: 0xE8, fast: 0x10, normal: 0x08, slow: 0x04 }[ms] ?? 0x08);
   const fast = ms === 'instant';
@@ -236,13 +237,19 @@ function showLast() {
   $('r-download').hidden = !last;
   // a race seed keeps its spoiler hidden
   $('r-spoiler').hidden = !last || !!last.race;
-  $('r-seed-out').textContent = last ? (last.race ? `Race seed ${last.spoiler.seed}` : `Seed ${last.spoiler.seed}`) : '';
-  $('r-seed-out').title = last && last.race ? 'A race seed: its spoiler stays hidden'
-    : 'Type this number in the seed box to get the same game again';
-  const canShare = live && !!last.fields;
+  if (last && last.alttpr) {
+    $('r-seed-out').textContent = `alttpr.com seed ${last.alttpr}`;
+    $('r-seed-out').title = 'Paste this id, or its alttpr.com link, to load the same seed again';
+  } else {
+    $('r-seed-out').textContent = last ? (last.race ? `Race seed ${last.spoiler.seed}` : `Seed ${last.spoiler.seed}`) : '';
+    $('r-seed-out').title = last && last.race ? 'A race seed: its spoiler stays hidden'
+      : 'Type this number in the seed box to get the same game again';
+  }
+  const canShare = live && (!!last.fields || !!last.alttpr);
   $('r-share').hidden = !canShare;
-  $('r-share-race').hidden = !canShare;
-  renderCode($('r-code'), playing ? playing.code : (last ? codeForSeed(last.spoiler.seed) : null));
+  $('r-share-race').hidden = !canShare || !!last.alttpr;   // an alttpr.com seed's link is the link
+  const code = playing ? playing.code : (last ? (last.code || (last.alttpr ? null : codeForSeed(last.spoiler.seed))) : null);
+  renderCode($('r-code'), code);
 }
 
 // Called by the main page whenever a ROM starts, generated or loaded.
@@ -253,9 +260,9 @@ function noteRom(bytes, name) {
 }
 
 async function copyLink(race) {
-  if (!last || !last.fields) return;
-  const url = buildLink(last.spoiler.seed, last.fields, race);
-  const what = race ? 'Race link' : 'Seed link';
+  if (!last || (!last.fields && !last.alttpr)) return;
+  const url = last.alttpr ? `https://alttpr.com/h/${last.alttpr}` : buildLink(last.spoiler.seed, last.fields, race);
+  const what = last.alttpr ? 'alttpr.com link' : race ? 'Race link' : 'Seed link';
   try {
     await navigator.clipboard.writeText(url);
     status(`${what} copied. Anyone who opens it gets the same game (they need their own base ROM).` +
@@ -394,6 +401,99 @@ async function generateAndPlay() {
   } finally {
     btn.disabled = false;
   }
+}
+
+// ── an alttpr.com seed, played here ──────────────────────────────────────────
+const kv = { get: kvGet, set: kvSet };
+async function ownBase() {
+  const { rom, baseOk } = await buildBaseRom();
+  return { rom, md5: baseOk ? BASE_MD5 : md5(rom) };
+}
+const ALTTPR_MODES = ['open', 'standard', 'inverted', 'retro'];
+
+async function playAlttprSeed(id) {
+  if (msu.count) msu.unlock();
+  const btn = $('r-generate');
+  if (btn.disabled) return;
+  if (!(await refreshBaseStatus())) {
+    status('First choose your Japanese 1.0 ROM with the Base ROM button.', 'bad');
+    $('r-base-input').click();
+    return;
+  }
+  btn.disabled = true;
+  try {
+    status(`Getting seed ${id} from alttpr.com…`);
+    const seed = await fetchAlttprSeed(id);
+    status('Building the ROM…');
+    const jp = await kvGet('base-jp10');
+    const base = await baseFor(seed, jp, ownBase, kv);
+    const rom = patchSeed(base, seed.data);
+    const m = (seed.data.spoiler && seed.data.spoiler.meta) || {};
+    // a race seed may lock quickswap off
+    applyCosmetics(rom, { quickswap: !m.tournament || !!m.allow_quickswap });
+    if (msu.count) rom[0x18021A] = 0x01;
+    const sprite = await kvGet('sprite').catch(() => null);
+    if (sprite && sprite.bytes) {
+      try { applySprite(rom, parseSprite(sprite.bytes)); } catch (e) { console.warn('[randomizer] sprite skipped:', e); }
+    }
+    updateChecksum(rom);
+    const code = codeFromRom(rom);
+    const name = `alttpr - ${id}.sfc`;
+    const spoilerOn = m.spoilers === 'on' && seed.data.spoiler && Object.keys(seed.data.spoiler).length > 1;
+    last = { rom, name, alttpr: id, code, race: !spoilerOn, spoiler: { seed: id, hash: id, ...(seed.data.spoiler || {}) } };
+    playing = null;
+    showLast();
+    status(`Ready: alttpr.com seed ${id}${m.notes ? ' (' + String(m.notes).replace(/<[^>]*>/g, '').trim() + ')' : ''}` +
+      (code ? `, code ${codeNames(code).join(' / ')}` : ''), 'ok');
+    document.body.classList.remove('rando-open');
+    $('r-toggle').setAttribute('aria-expanded', 'false');
+    try { localStorage.setItem('unified-desktop-open', '0'); } catch (e) {}
+    try { await kvSet('last-seed', last); } catch (e) {}
+    window.UnifiedApp.playRom(rom, name, {
+      gamemode: ALTTPR_MODES.includes(m.mode) ? m.mode : 'open',
+      dungeonitems: TRACKER_DI[m.dungeon_items] || 'standard',
+      swordless: m.weapons === 'swordless' ? 'yes' : 'no',
+      gtcrystals: String(m.entry_crystals_tower ?? 7),
+      bossshuffle: m['enemizer.boss_shuffle'] && m['enemizer.boss_shuffle'] !== 'none' ? 'yes' : 'no',
+      enemizer: m['enemizer.enemy_shuffle'] && m['enemizer.enemy_shuffle'] !== 'none' ? 'yes' : 'no',
+    });
+  } catch (e) {
+    console.error(e);
+    status(String(e.message || e), 'bad');
+    if (e.needsRelay) { const d = $('rando-bar').querySelector('details'); if (d) d.open = true; $('r-relay').focus(); }
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ── "Load a seed": paste a link or a number ──────────────────────────────────
+// This app's seed link -> its settings and seed number; an alttpr.com link or
+// seed id -> that seed; a plain number -> that seed number with the current
+// settings. Then it plays.
+function loadPasted(text) {
+  text = String(text || '').trim();
+  if (!text) { status('Paste a seed link, an alttpr.com link, or a seed number.', 'bad'); return false; }
+  let url = null;
+  try { url = new URL(text); } catch (e) {}
+  if (url && url.searchParams.has('seed')) {
+    const l = readLink(url.search, $);
+    if (!l) { status('That link doesn\'t have a seed in it.', 'bad'); return false; }
+    Object.entries(l.fields).forEach(([id, v]) => { $(id).value = v; });
+    $('r-seed').value = String(l.seed);
+    shared = { seed: l.seed, fields: currentFields(), race: l.race, otherBuild: l.otherBuild, problems: l.problems };
+    showShared();
+    generateAndPlay();
+    return true;
+  }
+  const id = alttprId(text);
+  if (id) { playAlttprSeed(id); return true; }
+  if (/^\d{1,10}$/.test(text)) {
+    $('r-seed').value = text;
+    generateAndPlay();
+    return true;
+  }
+  status('That isn\'t a seed link, an alttpr.com seed, or a seed number.', 'bad');
+  return false;
 }
 
 // Called by "Load ROM…": if the file is the plain Japanese 1.0 ROM, save it
@@ -554,6 +654,29 @@ export function init() {
   });
   document.addEventListener('click', (e) => {
     if (!$('r-sprite-sheet').hidden && !e.target.closest('#r-sprite-sheet, #r-sprite-prev')) $('r-sprite-sheet').hidden = true;
+  });
+  $('r-paste-go').addEventListener('click', () => { if (loadPasted($('r-paste').value)) $('r-paste').value = ''; });
+  $('r-paste').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); if (loadPasted($('r-paste').value)) $('r-paste').value = ''; }
+  });
+  // Pasting anywhere on the page (not into a box) works too, for anything
+  // that looks like a seed link.
+  document.addEventListener('paste', (e) => {
+    const t = e.target;
+    if (t && t.closest && t.closest('input, textarea, select, [contenteditable]')) return;
+    const text = (e.clipboardData && e.clipboardData.getData('text')) || '';
+    let isLink = false;
+    try { isLink = new URL(text.trim()).searchParams.has('seed'); } catch (x) {}
+    if (!isLink && !alttprId(text) ) return;
+    if (!/alttpr\.com|[?&]seed=/.test(text)) return;   // a bare id or number only from the box
+    e.preventDefault();
+    loadPasted(text);
+  });
+  $('r-relay').value = relayUrl();
+  $('r-relay').addEventListener('change', () => {
+    setRelayUrl($('r-relay').value);
+    $('r-relay').value = relayUrl();
+    status(relayUrl() ? 'Relay saved. alttpr.com seeds can be loaded now.' : 'Relay removed.', 'ok');
   });
   $('r-share').addEventListener('click', () => copyLink(false));
   $('r-share-race').addEventListener('click', () => copyLink(true));

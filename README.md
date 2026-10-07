@@ -136,6 +136,43 @@ alttpr.com with spoilers off and share that. Links carry a generator version
 (`v=`); one made with a different version of this app says so, as the game might
 differ (compare codes).
 
+## Loading a seed: paste a link or a number
+
+**Load a seed** (Randomizer bar) takes any of these; paste it and press **Load** or
+Enter. Pasting a link anywhere on the page (outside a text box) works too.
+
+- **A seed link from this app** — plays that seed with its settings (as opening the
+  link would).
+- **A seed number** — plays that number with the settings currently chosen.
+- **An alttpr.com seed** — a link like `https://alttpr.com/h/AbC123xyZ9`, or just the
+  10-character id. The app downloads the seed and builds the ROM in your browser the
+  way alttpr.com's own page does: alttpr.com's base patch for that seed's version onto
+  your Japanese 1.0 ROM, then the seed, then your sprite, music and other options
+  (quickswap stays off if a race seed locks it). The tracker is set to the seed's
+  world state, dungeon items, swords, GT crystals, boss shuffle and enemizer, and the
+  five-item code is read from the seed. **Share seed** copies its alttpr.com link.
+  Base patches for other versions are downloaded once and kept.
+
+### Loading alttpr.com seeds: the relay (one-time setup)
+
+alttpr.com doesn't let web pages on other sites read its seeds, so the app asks a
+small relay you run for free on Cloudflare, and the relay asks alttpr.com.
+`relay/worker.js` is the whole thing: it only passes on alttpr.com seeds (the seed,
+its base ROM version and that version's base patch), only for this app's pages, and
+only reads.
+
+1. Make a free account at [dash.cloudflare.com](https://dash.cloudflare.com).
+2. Go to **Workers & Pages → Create → Create Worker**, name it (e.g. `alttpr-relay`)
+   and press **Deploy**.
+3. Press **Edit code**, replace everything with the contents of `relay/worker.js`, and
+   press **Deploy** again.
+4. Copy the worker's address (`https://alttpr-relay.<your-name>.workers.dev`).
+5. In the app: **Randomizer → ROM options → alttpr.com relay**, paste the address,
+   and click elsewhere to save it.
+
+If you host the app somewhere other than `hugecrankhank.github.io`, add that address
+to `ALLOWED` at the top of the worker.
+
 ## Sprites
 
 The **Link sprite** setting (Randomizer bar) shows a preview of the current sprite.
