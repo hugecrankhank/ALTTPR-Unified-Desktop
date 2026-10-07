@@ -10,15 +10,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          mkdir -p probe && cd probe
-          exec > log.txt 2>&1
-          set +e
-          curl -sS https://alttpr.com/sprites -o sprites.json
-          for f in 001.link.1 abigail.1 zora.2; do
-            curl -sS -o $f.zspr https://alttpr-assets.s3.us-east-2.amazonaws.com/$f.zspr
-            curl -sS -o $f.zspr.png https://alttpr-assets.s3.us-east-2.amazonaws.com/$f.zspr.png
-          done
-          ls -la
+          mkdir -p probe
+          curl -sS https://alttpr.com/sprites -o probe/list.json
+          python3 - <<'PY'
+          import json, subprocess, concurrent.futures as cf
+          d = json.load(open('probe/list.json'))
+          def head(u):
+              r = subprocess.run(['curl', '-s', '-o', '/dev/null', '-w', '%{http_code} %{size_download} %{content_type}', '-r', '0-63', u], capture_output=True, text=True)
+              return r.stdout
+          def check(s):
+              return s['name'], s['preview'], head(s['preview']), s['file'], head(s['file'])
+          out = []
+          with cf.ThreadPoolExecutor(32) as ex:
+              for name, p, pr, f, fr in ex.map(check, d):
+                  if not (pr.startswith('200') or pr.startswith('206')) or not (fr.startswith('200') or fr.startswith('206')):
+                      out.append({'name': name, 'preview': p, 'preview_status': pr, 'file': f, 'file_status': fr})
+          json.dump(out, open('probe/missing.json', 'w'), indent=1)
+          print(len(out), 'problems')
+          PY
       - run: |
           git config user.name probe; git config user.email probe@example.com
-          git add -A probe; git commit -m "probe files"; git push
+          git add -A probe; git commit -m "probe: preview check"; git push
