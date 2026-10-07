@@ -1,0 +1,198 @@
+[
+ {
+  "name": "Link",
+  "preview": "https://alttpr-assets.s3.us-east-2.amazonaws.com/001.link.1.zspr.png",
+  "preview_status": "206 64 image/png",
+  "file": "https://alttpr-assets.s3.us-east-2.amazonaws.com/001.link.1.zspr",
+  "file_status": "403 263 application/xml"
+ },
+ {
+  "name": "Agrias",
+  "preview": "https://alttpr-assets.s3.us-east-2.amazonaws.com/agrias.1.zspr.png",
+  "preview_status": "403 243 application/xml",
+  "file": "https://alttpr-assets.s3.us-east-2.amazonaws.com/agrias.1.zspr",
+  "file_status": "206 64 application/octet-stream"
+ },
+ {
+  "name": "Alcoon",
+  "preview": "https://alttpr-assets.s3.us-east-2.amazonaws.com/alcoon.1.zspr.png",
+  "preview_status": "403 243 application/xml",
+  "file": "https://alttpr-assets.s3.us-east-2.amazonaws.com/alcoon.1.zspr",
+  "file_status": "206 64 application/octet-stream"
+ },
+ {
+  "name": "Angel",
+  "preview": "https://alttpr-assets.s3.us-east-2.amazonaws.com/angel.1.zspr.png",
+  "preview_status": "403 243 application/xml",
+  "file": "https://alttpr-assets.s3.us-east-2.amazonaws.com/angel.1.zspr",
+  "file_status": "206 64 application/octet-stream"
+ },
+ {
+  "name": "Axolotl",
+  "preview": "https://alttpr-assets.s3.us-east-2.amazonaws.com/axolotl.1.zspr.png",
+  "preview_status": "403 263 application/xml",
+  "file": "https://alttpr-assets.s3.us-east-2.amazonaws.com/axolotl.1.zspr",
+  "file_status": "206 64 application/octet-stream"
+ },
+ {
+  "name": "Bavarian Link",
+  "preview": "https://alttpr-assets.s3.us-east-2.amazonaws.com/bavarian-link.1.zspr.png",
+  "preview_status": "403 243 application/xml",
+  "file": "https://alttpr-assets.s3.us-east-2.amazonaws.com/bavarian-link.1.zspr",
+  "file_status": "206 64 application/octet-stream"
+ },
+ {
+  "name": "Bomberman",
+  "preview": "https://alttpr-assets.s3.us-east-2.amazonaws.com/bomberman.1.zspr.png",
+  "preview_status": "403 263 application/xml",
+  "file": "https://alttpr-assets.s3.us-east-2.amazonaws.com/bomberman.1.zspr",
+  "file_status": "206 64 application/octet-stream"
+ },
+ {
+  "name": "Drak",
+  "preview": "https://alttpr-assets.s3.us-east-2.amazonaws.com/drak.1.zspr.png",
+  "preview_status": "403 243 application/xml",
+  "file": "https://alttpr-assets.s3.us-east-2.amazonaws.com/drak.1.zspr",
+  "file_status": "206 64 application/octet-stream"
+ },
+ {
+  "name": "GaMetal",
+  "preview": "https://alttpr-assets.s3.us-east-2.amazonaws.com/gametal.1.zspr.png",
+  "preview_status": "403 243 application/xml",
+  "file": "https://alttpr-assets.s3.us-east-2.amazonaws.com/gametal.1.zspr",
+  "file_status": "206 64 application/octet-stream"
+ },
+ {
+  "name": "Guandar",
+  "preview": "https://alttpr-assets.s3.us-east-2.amazonaws.com/guandar.1.zspr.png",
+  "preview_status": "403 263 application/xml",
+  "file": "https://alttpr-assets.s3.us-east-2.amazonaws.com/guandar.1.zspr",
+  "file_status": "206 64 application/octet-stream"
+ },
+ {
+  "name": "Imani",
+  "preview": "https://alttpr-assets.s3.us-east-2.amazonaws.com/imani.1.zspr.png",
+  "preview_status": "403 243 application/xml",
+  "file": "https://alttpr-assets.s3.us-east-2.amazonaws.com/imani.1.zspr",
+  "file_status": "206 64 application/octet-stream"
+ },
+ {
+  "name": "Isabelle",
+  "preview": "https://alttpr-assets.s3.us-east-2.amazonaws.com/isabelle.1.zspr.png",
+  "preview_status": "403 263 application/xml",
+  "file": "https://alttpr-assets.s3.us-east-2.amazonaws.com/isabelle.1.zspr",
+  "file_status": "206 64 application/octet-stream"
+ },
+ {
+  "name": "Kite",
+  "preview": "https://alttpr-assets.s3.us-east-2.amazonaws.com/kite.2.zspr.png",
+  "preview_status": "403 263 application/xml",
+  "file": "https://alttpr-assets.s3.us-east-2.amazonaws.com/kite.2.zspr",
+  "file_status": "206 64 application/octet-stream"
+ },
+ {
+  "name": "Koopa",
+  "preview": "https://alttpr-assets.s3.us-east-2.amazonaws.com/koopa.1.zspr.png",
+  "preview_status": "403 263 application/xml",
+  "file": "https://alttpr-assets.s3.us-east-2.amazonaws.com/koopa.1.zspr",
+  "file_status": "206 64 application/octet-stream"
+ },
+ {
+  "name": "Lanux",
+  "preview": "https://alttpr-assets.s3.us-east-2.amazonaws.com/lanux.1.zspr.png",
+  "preview_status": "403 243 application/xml",
+  "file": "https://alttpr-assets.s3.us-east-2.amazonaws.com/lanux.1.zspr",
+  "file_status": "206 64 application/octet-stream"
+ },
+ {
+  "name": "Lord Hoell",
+  "preview": "https://alttpr-assets.s3.us-east-2.amazonaws.com/lord-hoell.1.zspr.png",
+  "preview_status": "403 263 application/xml",
+  "file": "https://alttpr-assets.s3.us-east-2.amazonaws.com/lord-hoell.1.zspr",
+  "file_status": "206 64 application/octet-stream"
+ },
+ {
+  "name": "Lugia",
+  "preview": "https://alttpr-assets.s3.us-east-2.amazonaws.com/lugia.1.zspr.png",
+  "preview_status": "403 263 application/xml",
+  "file": "https://alttpr-assets.s3.us-east-2.amazonaws.com/lugia.1.zspr",
+  "file_status": "206 64 application/octet-stream"
+ },
+ {
+  "name": "Power Pigg",
+  "preview": "https://alttpr-assets.s3.us-east-2.amazonaws.com/power-pigg.1.zspr.png",
+  "preview_status": "403 263 application/xml",
+  "file": "https://alttpr-assets.s3.us-east-2.amazonaws.com/power-pigg.1.zspr",
+  "file_status": "206 64 application/octet-stream"
+ },
+ {
+  "name": "Renoko",
+  "preview": "https://alttpr-assets.s3.us-east-2.amazonaws.com/renoko.1.zspr.png",
+  "preview_status": "403 263 application/xml",
+  "file": "https://alttpr-assets.s3.us-east-2.amazonaws.com/renoko.1.zspr",
+  "file_status": "206 64 application/octet-stream"
+ },
+ {
+  "name": "Rocky",
+  "preview": "https://alttpr-assets.s3.us-east-2.amazonaws.com/rocky.1.zspr.png",
+  "preview_status": "403 263 application/xml",
+  "file": "https://alttpr-assets.s3.us-east-2.amazonaws.com/rocky.1.zspr",
+  "file_status": "206 64 application/octet-stream"
+ },
+ {
+  "name": "Sans (Carld923)",
+  "preview": "https://alttpr-assets.s3.us-east-2.amazonaws.com/sans-carld.1.zspr.png",
+  "preview_status": "403 263 application/xml",
+  "file": "https://alttpr-assets.s3.us-east-2.amazonaws.com/sans-carld.1.zspr",
+  "file_status": "206 64 application/octet-stream"
+ },
+ {
+  "name": "Sans (Tux_66)",
+  "preview": "https://alttpr-assets.s3.us-east-2.amazonaws.com/sans-tux.1.zspr.png",
+  "preview_status": "403 243 application/xml",
+  "file": "https://alttpr-assets.s3.us-east-2.amazonaws.com/sans-tux.1.zspr",
+  "file_status": "206 64 application/octet-stream"
+ },
+ {
+  "name": "Shoujo",
+  "preview": "https://alttpr-assets.s3.us-east-2.amazonaws.com/shoujo.1.zspr.png",
+  "preview_status": "403 263 application/xml",
+  "file": "https://alttpr-assets.s3.us-east-2.amazonaws.com/shoujo.1.zspr",
+  "file_status": "206 64 application/octet-stream"
+ },
+ {
+  "name": "Spiritendo",
+  "preview": "https://alttpr-assets.s3.us-east-2.amazonaws.com/spiritendo.1.zspr.png",
+  "preview_status": "403 263 application/xml",
+  "file": "https://alttpr-assets.s3.us-east-2.amazonaws.com/spiritendo.1.zspr",
+  "file_status": "206 64 application/octet-stream"
+ },
+ {
+  "name": "Stitch",
+  "preview": "https://alttpr-assets.s3.us-east-2.amazonaws.com/stitch.1.zspr.png",
+  "preview_status": "403 263 application/xml",
+  "file": "https://alttpr-assets.s3.us-east-2.amazonaws.com/stitch.1.zspr",
+  "file_status": "206 64 application/octet-stream"
+ },
+ {
+  "name": "Tunic",
+  "preview": "https://alttpr-assets.s3.us-east-2.amazonaws.com/tunic.2.zspr.png",
+  "preview_status": "403 263 application/xml",
+  "file": "https://alttpr-assets.s3.us-east-2.amazonaws.com/tunic.2.zspr",
+  "file_status": "206 64 application/octet-stream"
+ },
+ {
+  "name": "Unicorn",
+  "preview": "https://alttpr-assets.s3.us-east-2.amazonaws.com/unicorn.1.zspr.png",
+  "preview_status": "403 263 application/xml",
+  "file": "https://alttpr-assets.s3.us-east-2.amazonaws.com/unicorn.1.zspr",
+  "file_status": "206 64 application/octet-stream"
+ },
+ {
+  "name": "Wackerly",
+  "preview": "https://alttpr-assets.s3.us-east-2.amazonaws.com/wackerly.1.zspr.png",
+  "preview_status": "403 263 application/xml",
+  "file": "https://alttpr-assets.s3.us-east-2.amazonaws.com/wackerly.1.zspr",
+  "file_status": "206 64 application/octet-stream"
+ }
+]
