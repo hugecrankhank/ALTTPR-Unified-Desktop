@@ -10,20 +10,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          exec > probe.txt 2>&1
-          O="Origin: https://hugecrankhank.github.io"
-          echo "== list"; curl -sS -D - -o list.json -H "$O" https://alttpr.com/sprites | grep -i -E "^HTTP|access-control|content-type"
-          echo "entries: $(python3 -c 'import json;print(len(json.load(open("list.json"))))')"
-          echo "== zspr"; curl -sS -D - -o /dev/null -H "$O" https://alttpr-assets.s3.us-east-2.amazonaws.com/abigail.1.zspr | grep -i -E "^HTTP|access-control|content-length"
-          echo "== png";  curl -sS -D - -o /dev/null -H "$O" https://alttpr-assets.s3.us-east-2.amazonaws.com/abigail.1.zspr.png | grep -i -E "^HTTP|access-control|content-length"
-          echo "== preflight-ish GET list with Origin alttpr"; curl -sS -D - -o /dev/null -H "Origin: https://alttpr.com" https://alttpr-assets.s3.us-east-2.amazonaws.com/abigail.1.zspr | grep -i access-control
-          python3 - <<'PY'
-          import json; d=json.load(open('list.json'))
-          import collections
-          print('usage counts', collections.Counter(u for s in d for u in s.get('usage',[])))
-          print('keys', sorted({k for s in d for k in s}))
-          print(json.dumps(d[-1]))
-          PY
+          mkdir -p probe && cd probe
+          curl -fsS https://alttpr.com/sprites -o sprites.json
+          for f in 001.link.1 abigail.1 zora.2; do
+            curl -fsS -o $f.zspr https://alttpr-assets.s3.us-east-2.amazonaws.com/$f.zspr
+            curl -fsS -o $f.zspr.png https://alttpr-assets.s3.us-east-2.amazonaws.com/$f.zspr.png
+          done
+          ls -la
       - run: |
           git config user.name probe; git config user.email probe@example.com
-          git add probe.txt; git commit -m "probe results"; git push
+          git add probe; git commit -m "probe files"; git push
