@@ -100,23 +100,22 @@
   #frames.items-only #items-wrap { flex: 1; height: auto; }
   #frames.map-only #items-wrap { display: none; }
 
-  /* Tablet layout (tablet.js): items on top, Light World map left, game in
-     the middle, Dark World map right, dungeon keys/crystals along the bottom. */
-  .tab-pane { display: none; overflow: hidden; background: #000; position: relative; min-width: 0; min-height: 0; }
-  #tab-items, #tab-dungeons { position: absolute; border: 0; transform-origin: 0 0; background: #000; display: block; }
-  #tab-map-lw, #tab-map-dw { width: 100%; height: 100%; border: 0; display: block; background: #000; }
+  /* Tablet layout (tablet.js), built on Hutch's own tablet view (his
+     mobile.html / js/mobile.js): one item tracker fills the screen with the
+     items across the top and the dungeons along the bottom, the map tracker
+     sits in the band between them with Light World left and Dark World
+     right, and the game goes in the gap between the two maps. */
+  .tab-pane { display: none; }
+  #tab-full { position: absolute; inset: 0; overflow: hidden; background: #000; }
+  #tab-items { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; background: #000; }
+  #tab-map { position: absolute; left: 0; top: 0; width: 100%; height: 0; border: 0; display: block;
+    background: transparent; }
   #layout-sel { display: none; }
   @media (min-width: 901px) { #layout-sel { display: flex; } }
-  body.tablet main { display: grid; grid-template-columns: var(--side, 25%) var(--center, 50%) var(--side, 25%);
-    grid-template-rows: var(--top, 15%) minmax(0, 1fr) var(--bot, 10%);
-    grid-template-areas: "top top top" "lw game dw" "bot bot bot"; }
+  body.tablet main { display: block; position: relative; }
   body.tablet aside { display: none; }
-  body.tablet #game-wrap { grid-area: game; }
   body.tablet .tab-pane { display: block; }
-  body.tablet #tab-top { grid-area: top; border-bottom: 1px solid var(--line); }
-  body.tablet #tab-bot { grid-area: bot; border-top: 1px solid var(--line); }
-  body.tablet #tab-lw { grid-area: lw; }
-  body.tablet #tab-dw { grid-area: dw; }
+  body.tablet #game-wrap { position: absolute; z-index: 2; left: 50%; top: 30%; width: 0; height: 0; }
   body.tablet header { padding-top: max(6px, env(safe-area-inset-top)) !important; padding-bottom: 6px; gap: 6px 12px; }
   body.tablet header h1 { font-size: 14px; }
 
@@ -350,10 +349,10 @@
       <iframe id="map-frame" title="Map tracker"></iframe>
     </div>
   </aside>
-  <div class="tab-pane" id="tab-top"><iframe id="tab-items" title="Items"></iframe></div>
-  <div class="tab-pane" id="tab-lw"><iframe id="tab-map-lw" title="Light World map"></iframe></div>
-  <div class="tab-pane" id="tab-dw"><iframe id="tab-map-dw" title="Dark World map"></iframe></div>
-  <div class="tab-pane" id="tab-bot"><iframe id="tab-dungeons" title="Dungeons"></iframe></div>
+  <div class="tab-pane" id="tab-full">
+    <iframe id="tab-items" title="Item tracker"></iframe>
+    <iframe id="tab-map" title="Map tracker" allowtransparency="true"></iframe>
+  </div>
 </main>
 
 <script src="bridge/sni-bridge.js"></script>

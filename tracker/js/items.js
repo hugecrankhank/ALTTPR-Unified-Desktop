@@ -126,7 +126,7 @@ let previousSRAM = null;
 // Bumped with every change to this file, relayed in the broadcast snapshot so
 // the map's gear menu can show which build the ITEM TRACKER is running — the
 // two windows are packaged together but reload independently.
-window.ITEMS_BUILD = '1126j';
+window.ITEMS_BUILD = '1126r';
 let _bombClearTimer = null; // debounce: only clear bombs after sustained 0 reading
 
 const items = {
@@ -1941,7 +1941,9 @@ function createTracker() {
                 dungeonSlot.dataset.dungeonKey = itemKey;
                 
                 // Check if this is a pendant dungeon (EP, DP, ToH)
-                const isPendantDungeon = ['ep', 'dp', 'toh', 'hc'].includes(itemKey);
+                // The tablet view (mobile.html) builds every dungeon in the tall
+                // crystal-dungeon layout, so the bottom row lines up (Chris, Oct 2026).
+                const isPendantDungeon = ['ep', 'dp', 'toh', 'hc'].includes(itemKey) && !window._mobileLayout;
                 if (isPendantDungeon) {
                     dungeonSlot.classList.add('pendant-dungeon');
                 }
@@ -2995,6 +2997,9 @@ function _broadcastItemSnapNow() {
     snap.currentDungeon = window._currentDungeon || null;
     snap.currentFloor   = window._currentDungeon ? (window._currentFloor || null) : null;
     snap.currentWorld   = window._currentWorld || null;
+    snap.gtBk           = window.gtBkState ? window.gtBkState() : null;
+    snap.dungeonCard    = window.dungeonCardState();
+    snap.progress       = window._progress || null;
     window._itemsBc.postMessage({ type: 'items', data: snap });
     // Feed the read-only items REST API (Electron main process) if available.
     try {
@@ -3462,6 +3467,47 @@ window.setCurrentDungeon = setCurrentDungeon;
 // The floor, as the game numbers it: 1F, 2F … above ground, B1, B2 … below.
 // Only meaningful while currentDungeon is set; published as currentFloor.
 window._currentFloor = null;
+// The announce card for the dungeon Link is in (overlays/announce.html): chests,
+// small keys, map / compass / big key and the boss. Null outside dungeons.
+// Published as snap.dungeonCard → tracker:dungeon-card (Chris, Oct 2026).
+var CARD_BOSS_NAMES = [null, 'Armos Knights', 'Lanmolas', 'Moldorm', 'Helmasaur King',
+    'Arrghus', 'Mothula', 'Blind', 'Kholdstare', 'Vitreous', 'Trinexx'];
+function cardPrize(k) {
+    var img = document.querySelector('[data-dungeon-key="' + k + '"] .prize-img');
+    if (!img) return { prize: null, got: false };
+    var f = (img.getAttribute('src') || '').split('/').pop();
+    var m = /^(greenpendant|redcrystal|pendant|crystal|unknown)/.exec(f);
+    return { prize: m ? m[1] : 'unknown', got: /1\.png$/.test(f) };
+}
+window.dungeonCardState = function () {
+    var k = window._currentDungeon;
+    if (!k) return null;
+    var d = (window.dungeons && window.dungeons[k]) || {};
+    var c = window.dngCardCounts ? window.dngCardCounts(k) : { opened: 0, total: 0, bossBeaten: null };
+    var ti = window.trackerItems || {};
+    return {
+        id:         k,
+        chests:     c.opened,
+        maxChests:  c.total,
+        keys:       ti[k + 'SmallKeys'] || d.smallKeyCount || 0,
+        maxKeys:    k === 'ct' && window.ctMaxSmallKeys ? window.ctMaxSmallKeys() : (d.maxSmallKeys || 0),
+        // null = this dungeon has none (Agahnim's Tower has no map, compass or big key)
+        map:        (k === 'ct' || !d.mapAddr) ? null : !!d.mapState,
+        compass:    (k === 'ct' || d.noCompass) ? null : !!d.compassState,
+        bigKey:     (k === 'ct' || d.noBigKeyItem) ? null : !!d.bigkeyState,
+        boss:       k === 'ct' ? 'Agahnim' : k === 'gt' ? 'Agahnim 2'
+                  : (CARD_BOSS_NAMES[d.bossState || 0] || null),
+        // The item tracker's boss picture (boss/boss<n>.png; 0 = unknown).
+        // Agahnim has none, so CT and GT send null.
+        bossNum:    (k === 'ct' || k === 'gt' || k === 'hc') ? null : (d.bossState || 0),
+        // The dungeon's prize as the item tracker shows it: crystal, redcrystal,
+        // pendant, greenpendant or unknown — null where there is none (HC, CT, GT).
+        prize:      cardPrize(k).prize,
+        prizeGot:   cardPrize(k).got,
+        bossBeaten: c.bossBeaten
+    };
+};
+
 // Light or Dark World ('lw' / 'dw'), from the overworld area $7E008A (keeps the
 // last area while in caves and dungeons) — for the map overlay's
 // overworld image (Chris, Oct 2026). Published as currentWorld.
@@ -4093,6 +4139,9 @@ function processInventoryData(data) {
         snap.currentDungeon = window._currentDungeon || null;   // both builders, or the dot flickers
         snap.currentFloor   = window._currentDungeon ? (window._currentFloor || null) : null;
         snap.currentWorld   = window._currentWorld || null;
+        snap.gtBk           = window.gtBkState ? window.gtBkState() : null;
+        snap.dungeonCard    = window.dungeonCardState();
+        snap.progress       = window._progress || null;
         snap.crystals = (window.trackerItems && window.trackerItems.crystals) || 0;
         snap.mmMedallion = (window.trackerItems && window.trackerItems.mmMedallion) || 0;
         snap.trMedallion = (window.trackerItems && window.trackerItems.trMedallion) || 0;
@@ -4245,6 +4294,24 @@ function processInventoryData(data) {
         if (hp < 0) hp = 0;
         heartEl.textContent = hp + '/4';
         setHeartFill(hp);
+    }
+    // For the announce overlay's overworld view (Chris, Oct 2026): pendants
+    // ($7EF374, 3 bits) and crystals ($7EF37A, 7 bits) held, the heart pieces
+    // toward the next heart (the 0/4 above) and the check total ($7EF423, the
+    // CHECKS box's counter). Gameplay only, like the heart pieces above, so a
+    // save & quit can't blank them.
+    if (0xE4 < data.length && GAMEPLAY_MODES.indexOf(_currentGamemode) !== -1) {
+        const bits = (v) => { let c = 0; for (; v; v &= v - 1) c++; return c; };
+        // Split like the item tracker's top row: reds are crystals 5 and 6
+        // (0x04, 0x01), green is pendant 0x04.
+        const prog = { pendants: bits(data[0x34] & 0x07), crystals: bits(data[0x3A] & 0x7F),
+                       redCrystals: bits(data[0x3A] & 0x05), greenPendant: (data[0x34] & 0x04) ? 1 : 0,
+                       heartPieces: Math.min(4, data[0x2B]),
+                       checks: data[0xE3] | (data[0xE4] << 8) };
+        if (JSON.stringify(prog) !== JSON.stringify(window._progress || null)) {
+            window._progress = prog;
+            if (window.broadcastItemSnap) window.broadcastItemSnap();
+        }
     }
     // Revival count (SRAM 0xF5F453 = inv offset 0x113). Cumulative counter, so
     // use a high-water mark like checks/deaths/bonks — only ever increases,

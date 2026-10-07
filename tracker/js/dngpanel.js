@@ -26,7 +26,7 @@
 
 // Bumped with every change to this file. The map's gear menu shows it, so a
 // stale packaged build can be spotted without guessing (Chris, Sep 2026).
-window.DNGPANEL_BUILD = '1127k';
+window.DNGPANEL_BUILD = '1127n';
 
 var DNG_PANEL_CSS = `
 /* ── Dungeon hover panel ── */
@@ -505,6 +505,8 @@ window.dngLocClearedReset = function () {
   // the next poll. Both resetChecks and resetItemTracker route through here.
   window._lastRoomData = null;
   window._lastKeyDropData = null;
+  gtBk = { armed: false, at: null, atTorch: false };
+  saveGtBk();
   refresh();
 };
 
@@ -604,9 +606,84 @@ window.updateDungeonLocFlags = function (data) {
 
   if (authoritative) dngLocCleared = next;
   if (dirty) saveDngLocCleared();
+  if (authoritative) updateGtBk();
   // Refresh either way: the map/compass/big key icons read room data directly,
   // so they can change with no new cleared mark.
   refresh();
+};
+
+// ── GT big key count (the "which chest has the big key?" guessing game) ──
+// Counts the Ganon's Tower chests opened and freezes the count on the read
+// where the big key arrives: "Chest 9 had the big key" counts the big key
+// chest itself. Chests only — Bob's Torch is reported separately (the overlay
+// can add it by hand when it's skipped) — and only where the big key isn't
+// shuffled and no key drops are on (Chris, Oct 2026). Published as
+// snap.gtBk → tracker:gt-bk → overlays/announce.html.
+//
+// `at` is captured only if we saw the big key still missing first, so a tracker
+// opened mid-run with the key already found reports found-but-unknown rather
+// than a made-up number. Remembered across reloads; New Game clears it.
+var GTBK_KEY = 'alttp-gtbk';
+var gtBk = (function () {
+  try { var v = JSON.parse(localStorage.getItem(GTBK_KEY) || 'null'); if (v) return v; } catch (e) {}
+  return { armed: false, at: null, atTorch: false };
+})();
+function saveGtBk() { try { localStorage.setItem(GTBK_KEY, JSON.stringify(gtBk)); } catch (e) {} }
+function gtChestsOpened(data) {
+  var t = DUNGEON_LOC_FLAGS.gt, n = 0;
+  Object.keys(t).forEach(function (loc) {
+    if (loc === 'Boss' || loc === "Bob's Torch") return;
+    if (sramBit(data, t[loc])) n++;
+  });
+  return n;
+}
+function gtBkEnabled() {
+  var bkShuffled = window.dungeonShuffle ? !!window.dungeonShuffle().bigkey
+                 : !!(window.shuffleBigKey && window.shuffleBigKey());
+  return !bkShuffled && !keysShuffledBy('pot') && !keysShuffledBy('drop');
+}
+var _gtBkSent = '';
+function updateGtBk() {
+  var data = window._lastRoomData;
+  if (!data) return;
+  var found = dngItemState('gt', 'bigkey') === 1;
+  // Big key gone again → a different file or seed: start over.
+  if (!found && (gtBk.at !== null || !gtBk.armed)) {
+    gtBk = { armed: true, at: null, atTorch: false }; saveGtBk();
+  }
+  if (found && gtBk.armed && gtBk.at === null) {
+    gtBk.at = gtChestsOpened(data);
+    gtBk.atTorch = sramBit(data, DUNGEON_LOC_FLAGS.gt["Bob's Torch"]);
+    saveGtBk();
+  }
+  var st = JSON.stringify(window.gtBkState());
+  if (st !== _gtBkSent) {
+    _gtBkSent = st;
+    if (window.broadcastItemSnap) window.broadcastItemSnap();
+  }
+}
+window.gtBkState = function () {
+  var data = window._lastRoomData;
+  return {
+    enabled: gtBkEnabled(),
+    chests:  data ? gtChestsOpened(data) : 0,
+    torch:   !!(data && sramBit(data, DUNGEON_LOC_FLAGS.gt["Bob's Torch"])),
+    found:   dngItemState('gt', 'bigkey') === 1,
+    at:      gtBk.at,          // chests opened when the big key arrived (null = unknown)
+    atTorch: !!gtBk.atTorch    // was the torch taken by then
+  };
+};
+
+// Chests opened / total and the boss, for the announce card in
+// overlays/announce.html (Chris, Oct 2026). Chests only — pots and key drops
+// aren't counted — read from the same flags the hover card uses.
+window.dngCardCounts = function (dk) {
+  var names = (DUNGEON_LOCATIONS[dk] || []).filter(function (n) { return n !== 'Boss'; });
+  var opened = names.filter(function (n) { return locIsCleared(dk, n); }).length;
+  var hasBoss = (DUNGEON_LOCATIONS[dk] || []).indexOf('Boss') !== -1 ||
+                !!(DUNGEON_LOC_FLAGS[dk] || {}).Boss;   // GT: Agahnim 2's room
+  return { opened: opened, total: names.length,
+           bossBeaten: hasBoss ? locIsCleared(dk, 'Boss') : null };
 };
 
 // The key drop SRAM block, straight from the poll (js/items.js) or relayed to

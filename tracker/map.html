@@ -123,7 +123,7 @@ body {
 #dw { background-image: url('map/map_dw.png'); }
 
 /* ── Check dots ── */
-/* Below 75% map zoom the markers shrink with the map (--mk, set by applyZoom;
+/* Below 100% map zoom the markers shrink with the map (--mk, set by applyZoom;
    Chris, Oct 2026). CSS zoom rather than width/height: one rule covers every
    marker type and everything drawn inside them, and they stay centred on
    their spot. */
@@ -2811,7 +2811,7 @@ window.checkColorWith = function(id, extra) {
 };
 })();
 </script>
-<script src="js/dngpanel.js?v=1127k"></script>
+<script src="js/dngpanel.js?v=1127n"></script>
 <script src="js/entrances_data.js"></script>
 <script src="logic/ref_logic_entrances.js"></script>
 <script src="logic/ref_logic_entrances_owg.js"></script>
@@ -7941,8 +7941,8 @@ function applyZoom(initial) {
     el.style.height = size + 'px';
   });
   document.getElementById('zoom-label').textContent = pct + '%';
-  // Markers keep their size down to 75%, then shrink with the map.
-  document.documentElement.style.setProperty('--mk', pct < 75 ? (pct / 75).toFixed(3) : '1');
+  // Markers shrink with the map below 100% (Chris, Oct 2026; was 75%).
+  document.documentElement.style.setProperty('--mk', pct < 100 ? (pct / 100).toFixed(3) : '1');
   try { localStorage.setItem('alttp-map-zoom', String(pct)); } catch(ex) {}
   resizeWindowToMap(initial);
 }
@@ -9136,5 +9136,6 @@ if (document.readyState === 'loading') {
   });
 })();
 </script>
+<script src="js/mobile.js?v=11"></script>
 </body>
 </html>

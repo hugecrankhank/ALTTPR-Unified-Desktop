@@ -14,9 +14,14 @@ what changes is the screen during play on an iPad or other wide screen:
 - **Layout** in the top bar: *Auto* (tablet layout in landscape on screens 1000px+
   wide, the classic layout otherwise), *Tablet* (always), *Classic* (the
   randomizer edition's layout).
-- The bands are separate copies of the Hutch trackers with parts hidden: tapping a
-  dungeon box in the bottom band is mirrored to the items copy, and the two map
-  panes are one map tracker each showing a single world.
+- The tablet layout is built on Hutch's own tablet view (`mobile.html` /
+  `js/mobile.js` in [his tracker](https://github.com/hutchch/ALTTPR-Tracker)): the
+  item tracker lays out the items on top and the dungeons along the bottom, the
+  map shows Light World left and Dark World right, and the game sits in the gap
+  between the two maps.
+- **Resize while playing:** the **−** / **+** buttons at the bottom left of the
+  item tracker shrink or grow the maps; the game grows into the space they free.
+  The size is remembered.
 - Settings, ROMs, sprites and MSU packs are stored separately from the other two
   editions, so all three can be used side by side.
 
