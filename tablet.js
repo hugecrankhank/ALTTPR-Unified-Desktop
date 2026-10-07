@@ -17,6 +17,17 @@
  * This file does what his mobile.html does (puts the map in the middle band)
  * and one thing more: it puts the emulator in the gap between the two maps,
  * and follows the gap whenever it changes.
+ *
+ * Portrait layout (iPad held upright): the game on top, then the items and
+ * dungeons (Hutch's tablet item tracker, sized to its contents, no middle
+ * band), then both maps side by side across the full width with their menu
+ * bars hidden:
+ *
+ *   ┌────────────── emulator ──────────────┐
+ *   ├──────── items + dungeons ────────────┤
+ *   │ Light World map  │  Dark World map   │
+ *   └──────────────────┴───────────────────┘
+ *
  * Loaded before the main script, which hands it the tracker URLs.
  */
 (function () {
@@ -24,16 +35,18 @@
   var $ = function (id) { return document.getElementById(id); };
   var KEY = 'unified-ipad-layout';
   var GAP_KEY = 'alttp-mobile-gap';   // Hutch's key (js/mobile.js)
-  var on = null;           // current mode (null until first load)
+  var on = null;           // 'tablet', 'portrait' or false (classic); null until first load
   var urls = null;
   var mid = null;          // the middle band the item tracker last reported
 
   function pref() { try { return localStorage.getItem(KEY) || 'auto'; } catch (e) { return 'auto'; } }
-  function wantTablet() {
-    var p = pref();
-    if (p === 'tablet') return true;
+  function wantMode() {
+    var p = pref(), W = window.innerWidth, H = window.innerHeight;
+    if (p === 'tablet' || p === 'portrait') return p;
     if (p === 'classic') return false;
-    return window.innerWidth >= 1000 && window.innerWidth > window.innerHeight;
+    if (W >= 1000 && W > H) return 'tablet';
+    if (W >= 700 && H > W) return 'portrait';
+    return false;
   }
 
   // ── scale the tracker bands to use spare height ───────────────────────────
@@ -59,7 +72,7 @@
     f.style.transform = k === 1 ? '' : 'scale(' + k + ')';
   }
   function retune() {
-    if (lastT === null || tries > 6) return;
+    if (on !== 'tablet' || lastT === null || tries > 6) return;
     var z = size();
     if (!z.W || !z.H) return;
     // what the middle needs: the maps at their width-limited size, and the
@@ -77,6 +90,7 @@
   window.addEventListener('message', function (e) {
     if (!on || !e.data || e.data.type !== 'mobile-mid') return;
     if (e.source !== $('tab-items').contentWindow) return;
+    if (on === 'portrait') { portraitMid(e.data.height); return; }
     var Hv = size().H / k;
     lastT = e.data.top; lastB = Math.max(0, Hv - e.data.top - e.data.height);
     mid = { top: Math.round(e.data.top * k), height: Math.max(0, Math.round(e.data.height * k)) };
@@ -90,6 +104,7 @@
   // ── the game goes in the gap between the two maps ─────────────────────────
   var MARGIN = 6;          // breathing room between the game and each map
   function placeGame() {
+    if (on === 'portrait') { placePortrait(); return; }
     if (!on || !mid) return;
     var gw = $('game-wrap'), f = $('tab-map'), d;
     try { d = f.contentDocument; } catch (e) { return; }
@@ -125,14 +140,91 @@
     var gw = $('game-wrap');
     ['left', 'top', 'width', 'height'].forEach(function (k) { gw.style[k] = ''; });
     gw.__lastW = gw.__lastH = null;
+    ['tab-items', 'tab-map'].forEach(function (id) {
+      ['left', 'top', 'width', 'height', 'transform'].forEach(function (k) { $(id).style[k] = ''; });
+    });
+  }
+
+  // ── portrait ───────────────────────────────────────────────────────────────
+  var itemsH = 400;        // height of the items + dungeons band, tuned to fit
+  var MAP_GAP = 4;         // between the two maps
+  function portraitMid(midH) {
+    // Hutch's item tracker leaves a middle band for the map; here there is
+    // none, so shrink the frame until that band is gone.
+    if (midH > 2) { itemsH = Math.max(120, Math.round(itemsH - midH + 1)); placePortrait(); }
+  }
+  function mapEach(z) { return Math.floor(Math.min((z.W - MAP_GAP) / 2, z.H * 0.45)); }
+  function placePortrait() {
+    var z = size();
+    if (!z.W || !z.H) return;
+    var each = mapEach(z);
+    var gameH = Math.max(120, z.H - itemsH - each);
+    var it = $('tab-items'), m = $('tab-map'), gw = $('game-wrap');
+    it.style.transform = ''; it.style.left = '0px'; it.style.top = gameH + 'px';
+    it.style.width = z.W + 'px'; it.style.height = itemsH + 'px';
+    m.style.left = '0px'; m.style.top = (gameH + itemsH) + 'px';
+    m.style.width = z.W + 'px'; m.style.height = each + 'px';
+    gw.style.left = '0px'; gw.style.top = '0px'; gw.style.width = z.W + 'px'; gw.style.height = gameH + 'px';
+    fitPortraitMap();
+    if (gw.__lastW !== z.W || gw.__lastH !== gameH) {
+      gw.__lastW = z.W; gw.__lastH = gameH;
+      window.dispatchEvent(new Event('resize'));
+    }
+  }
+  var PORTRAIT_MAP_CSS =
+    'html,body{background:#000!important;overflow:hidden!important}' +
+    '#topbar,#bottombar{display:none!important}' +
+    '#maps-outer{padding:0!important;margin:0!important;height:100vh!important;display:flex!important;' +
+    'align-items:center;justify-content:center;overflow:hidden!important}' +
+    '#maps{display:flex!important;flex-direction:row!important;gap:' + MAP_GAP + 'px!important;margin:0!important}' +
+    '#settings-wrap{position:fixed!important;top:4px;right:4px;z-index:50}' +
+    '#settings-panel{max-height:calc(100vh - 40px);overflow-y:auto}';
+  var PORTRAIT_ITEMS_CSS =
+    // the −/+ size the maps in the landscape layout; nothing to size here
+    '.tracker-bottom-bar .size-btn{display:none!important}';
+  function inject(frame, id, css) {
+    try {
+      var d = frame.contentDocument;
+      if (!d || !d.head) return;
+      var st = d.getElementById(id);
+      if (!st) { st = d.createElement('style'); st.id = id; d.head.appendChild(st); }
+      st.textContent = css;
+    } catch (e) {}
+  }
+  function fitPortraitMap() {
+    var f = $('tab-map'), d, w;
+    try { d = f.contentDocument; w = f.contentWindow; } catch (e) { return; }
+    if (!d || !d.getElementById('maps')) return;
+    var each = mapEach(size());
+    d.querySelectorAll('.map-wrap').forEach(function (el) { el.style.width = el.style.height = each + 'px'; });
+    var pct = each / 5.12;   // markers shrink with the map below 100%, as Hutch does
+    d.documentElement.style.setProperty('--mk', pct < 100 ? (pct / 100).toFixed(3) : '1');
+    // keep his own zoom and window sizing from undoing this
+    w.applyZoom = fitPortraitMap; w.resizeWindowToMap = function () {};
+  }
+  function setupPortraitFrame(f, which) {
+    if (which === 'map') {
+      inject(f, 'unified-portrait-css', PORTRAIT_MAP_CSS);
+      try {
+        var d = f.contentDocument, sw = d.getElementById('settings-wrap');
+        if (sw && sw.parentNode !== d.body) d.body.appendChild(sw);
+      } catch (e) {}
+      fitPortraitMap(); setTimeout(fitPortraitMap, 300); setTimeout(fitPortraitMap, 1000);
+    } else {
+      inject(f, 'unified-portrait-css', PORTRAIT_ITEMS_CSS);
+    }
   }
 
   // ── frame setup ────────────────────────────────────────────────────────────
   function setupFrames() {
+    $('tab-items').addEventListener('load', function () {
+      if (on === 'portrait') setupPortraitFrame(this, 'items');
+    });
     $('tab-map').addEventListener('load', function () {
       if (!on) return;
       var f = this;
       try { if (window.UnifiedApp && window.UnifiedApp.installMapDedupe) window.UnifiedApp.installMapDedupe(f.contentWindow); } catch (e) {}
+      if (on === 'portrait') { setupPortraitFrame(f, 'map'); return; }
       try {
         var w = f.contentWindow;
         // follow the maps whenever Hutch refits them (gap −/+, rotation, band size)
@@ -152,12 +244,14 @@
   function load() {
     if (!urls) return;
     var blank = 'about:blank';
-    mid = null; lastT = lastB = null; tries = 0; k = 1; applyK();
+    mid = null; lastT = lastB = null; tries = 0; k = 1; itemsH = 400;
+    if (on === 'tablet') applyK(); else if (on === 'portrait') placePortrait();
     if (on) {
       $('items-frame').src = blank;
       $('map-frame').src = blank;
       $('tab-items').src = withMobile(urls.items);
-      $('tab-map').src = withMobile(urls.map);
+      // portrait sizes the maps itself; Hutch's mobile map keeps a gap for the game
+      $('tab-map').src = on === 'portrait' ? urls.map : withMobile(urls.map);
     } else {
       ['tab-items', 'tab-map'].forEach(function (id) { $(id).src = blank; });
       $('items-frame').src = urls.items;
@@ -166,11 +260,12 @@
   }
 
   function apply(force) {
-    var t = wantTablet();
+    var t = wantMode();
     if (t === on && !force) { placeGameSoon(); return; }
     on = t;
-    document.body.classList.toggle('tablet', on);
-    if (!on) clearGame();
+    clearGame();
+    document.body.classList.toggle('tablet', !!on);
+    document.body.classList.toggle('portrait', on === 'portrait');
     load();
     setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 120);
   }
@@ -187,14 +282,20 @@
   // the randomizer bar opening/closing changes the space the layout gets
   if (window.ResizeObserver) document.addEventListener('DOMContentLoaded', function () {
     var full = $('tab-full');
-    if (full) new ResizeObserver(function () { if (on) { applyK(); resetTune(); placeGameSoon(); } }).observe(full);
+    if (full) new ResizeObserver(function () {
+      if (on === 'tablet') { applyK(); resetTune(); placeGameSoon(); }
+      else if (on === 'portrait') placePortrait();
+    }).observe(full);
   });
   // the gap −/+ in the item tracker writes this key; follow it here too
   window.addEventListener('storage', function (e) { if (e.key === GAP_KEY) { placeGameSoon(); resetTune(); } });
   window.addEventListener('resize', function (e) {
     // ignore the resize events we send the emulator ourselves
     if (e && e.isTrusted === false) return;
-    if (on !== null) { apply(false); applyK(); resetTune(); }
+    if (on === null) return;
+    apply(false);
+    if (on === 'tablet') { applyK(); resetTune(); }
+    else if (on === 'portrait') { itemsH = 400; placePortrait(); }
   });
   window.addEventListener('orientationchange', function () { setTimeout(function () { apply(false); }, 300); });
 })();
