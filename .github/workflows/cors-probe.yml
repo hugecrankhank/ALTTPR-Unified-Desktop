@@ -10,24 +10,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          mkdir -p probe
-          curl -sS https://alttpr.com/sprites -o probe/list.json
+          mkdir -p probe2 && cd probe2
+          exec > log.txt 2>&1
+          set +e
+          O="Origin: https://hugecrankhank.github.io"
+          H=ry08NzXzy5
+          for u in https://alttpr.com/hash/$H https://alttpr.com/api/h/$H; do
+            echo "== GET $u"; curl -sS -D - -o "$(basename $(dirname $u))_$(basename $u).json" -H "$O" "$u" | grep -i -E "^HTTP|access-control|content-type|^vary"
+            echo "== OPTIONS $u"; curl -sS -D - -o /dev/null -X OPTIONS -H "$O" -H "Access-Control-Request-Method: GET" "$u" | grep -i -E "^HTTP|access-control"
+          done
           python3 - <<'PY'
-          import json, subprocess, concurrent.futures as cf
-          d = json.load(open('probe/list.json'))
-          def head(u):
-              r = subprocess.run(['curl', '-s', '-o', '/dev/null', '-w', '%{http_code} %{size_download} %{content_type}', '-r', '0-63', u], capture_output=True, text=True)
-              return r.stdout
-          def check(s):
-              return s['name'], s['preview'], head(s['preview']), s['file'], head(s['file'])
-          out = []
-          with cf.ThreadPoolExecutor(32) as ex:
-              for name, p, pr, f, fr in ex.map(check, d):
-                  if not (pr.startswith('200') or pr.startswith('206')) or not (fr.startswith('200') or fr.startswith('206')):
-                      out.append({'name': name, 'preview': p, 'preview_status': pr, 'file': f, 'file_status': fr})
-          json.dump(out, open('probe/missing.json', 'w'), indent=1)
-          print(len(out), 'problems')
+          import json
+          for f in ['hash_ry08NzXzy5.json', 'h_ry08NzXzy5.json']:
+              try:
+                  d = json.load(open(f))
+                  print(f, 'keys:', sorted(d.keys()) if isinstance(d, dict) else type(d))
+                  for k in ('md5','bpsLocation','size','hash','generated','current_rom_hash'):
+                      if isinstance(d, dict) and k in d: print('  ', k, '=', d[k])
+                  if isinstance(d, dict) and 'patch' in d: print('   patch entries', len(d['patch']), 'first', str(d['patch'][0])[:80])
+                  if isinstance(d, dict) and 'spoiler' in d: print('   spoiler keys', list(d['spoiler'].keys())[:12], 'meta', json.dumps(d['spoiler'].get('meta', {}))[:600])
+              except Exception as e: print(f, 'ERR', e, open(f).read()[:300])
           PY
+          B=$(python3 -c "import json;print(json.load(open('h_ry08NzXzy5.json')).get('bpsLocation',''))")
+          echo "bps: $B"
+          [ -n "$B" ] && { echo "== GET bps"; curl -sS -D - -o base.bps -H "$O" "https://alttpr.com$B" | grep -i -E "^HTTP|access-control|content-type|location"; ls -la base.bps; }
       - run: |
           git config user.name probe; git config user.email probe@example.com
-          git add -A probe; git commit -m "probe: preview check"; git push
+          git add -A probe2; git commit -m "probe: alttpr seed api"; git push
