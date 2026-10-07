@@ -10,21 +10,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          mkdir -p probe3 && cd probe3
+          mkdir -p probe4 && cd probe4
           exec > log.txt 2>&1
           set +e
           O="Origin: https://hugecrankhank.github.io"
-          H=ry08NzXzy5
-          for b in alttpr-patches alttpr-seeds alttpr-patch alttpr alttpr-hashes alttpr-seed alttpr-games alttpr-storage alttpr-prod alttpr-production vt-patches alttpr-randomizer; do
-            for r in s3.us-east-2.amazonaws.com s3.amazonaws.com; do
-              code=$(curl -s -o /tmp/body -w "%{http_code}" -H "$O" "https://$b.$r/$H.json"); body=$(head -c 160 /tmp/body | tr -d '\n')
-              echo "$b.$r -> $code $body"
-            done
+          curl -sS -D headers.txt -o index.html -H "$O" https://alttpr.gwaa.kiwi/generate
+          cat headers.txt
+          grep -oE '(src|href)="[^"]+"' index.html
+          for a in $(grep -oE '(src|href)="/[^"]+\.(js|css)"' index.html | sed -E 's/.*="([^"]+)"/\1/'); do
+            f=$(echo $a | tr '/' '_'); curl -sS -o "asset$f" "https://alttpr.gwaa.kiwi$a"; echo "got $a $(wc -c < asset$f)"
           done
-          echo "== bps on alttpr-assets?"; curl -s -o /dev/null -w "%{http_code}\n" https://alttpr-assets.s3.us-east-2.amazonaws.com/bps/79bbb4ad512838ab01fc06b7971f656c.bps
-          curl -s -o /dev/null -w "%{http_code}\n" https://alttpr-assets.s3.us-east-2.amazonaws.com/79bbb4ad512838ab01fc06b7971f656c.bps
-          echo "== base bps for current build"; curl -s https://alttpr.com/api/randomizer/settings 2>/dev/null | head -c 300; echo
-          curl -s https://alttpr.com/randomizer/settings | python3 -c "import json,sys; d=json.load(sys.stdin); print('base_file', d.get('base_file'))"
+          for p in / /api /api/ /robots.txt /about /settings /api/settings /api/randomizer/settings; do
+            echo "== $p"; curl -sS -o /dev/null -D - -H "$O" "https://alttpr.gwaa.kiwi$p" | grep -i -E "^HTTP|access-control|content-type|location"
+          done
       - run: |
           git config user.name probe; git config user.email probe@example.com
-          git add -A probe3; git commit -m "probe: buckets"; git push
+          git add -A probe4; git commit -m "probe: gwaa"; git push
