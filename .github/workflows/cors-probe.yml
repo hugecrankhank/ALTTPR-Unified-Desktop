@@ -10,19 +10,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          mkdir -p probe4 && cd probe4
+          mkdir -p probe5 && cd probe5
           exec > log.txt 2>&1
           set +e
-          O="Origin: https://hugecrankhank.github.io"
-          curl -sS -D headers.txt -o index.html -H "$O" https://alttpr.gwaa.kiwi/generate
-          cat headers.txt
-          grep -oE '(src|href)="[^"]+"' index.html
-          for a in $(grep -oE '(src|href)="/[^"]+\.(js|css)"' index.html | sed -E 's/.*="([^"]+)"/\1/'); do
-            f=$(echo $a | tr '/' '_'); curl -sS -o "asset$f" "https://alttpr.gwaa.kiwi$a"; echo "got $a $(wc -c < asset$f)"
-          done
-          for p in / /api /api/ /robots.txt /about /settings /api/settings /api/randomizer/settings; do
-            echo "== $p"; curl -sS -o /dev/null -D - -H "$O" "https://alttpr.gwaa.kiwi$p" | grep -i -E "^HTTP|access-control|content-type|location"
+          for O in "https://hugecrankhank.github.io" "https://alttpr.gwaa.kiwi"; do
+            echo "######## Origin $O"
+            echo "== GET /seed/doesnotexist"; curl -sS -D - -o body1.txt -H "Origin: $O" https://api.alttpr.gwaa.kiwi/seed/doesnotexist | grep -i -E "^HTTP|access-control|content-type|vary"; head -c 200 body1.txt; echo
+            echo "== OPTIONS /generate (json POST preflight)"; curl -sS -D - -o /dev/null -X OPTIONS -H "Origin: $O" -H "Access-Control-Request-Method: POST" -H "Access-Control-Request-Headers: content-type" https://api.alttpr.gwaa.kiwi/generate | grep -i -E "^HTTP|access-control|vary"
+            echo "== OPTIONS /seed/x GET"; curl -sS -D - -o /dev/null -X OPTIONS -H "Origin: $O" -H "Access-Control-Request-Method: GET" https://api.alttpr.gwaa.kiwi/seed/x | grep -i -E "^HTTP|access-control"
           done
       - run: |
           git config user.name probe; git config user.email probe@example.com
-          git add -A probe4; git commit -m "probe: gwaa"; git push
+          git add -A probe5; git commit -m "probe: gwaa cors"; git push
