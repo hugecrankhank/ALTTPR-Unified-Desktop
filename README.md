@@ -106,6 +106,45 @@ work without touching Hutch's code:
   size (side by side when upright, in a column on the right when sideways).
 - *Classic:* the randomizer edition's layout.
 
+## Seed links and races
+
+After **Generate & Play**, two buttons copy a link to that seed:
+
+- **Share seed** — opens the same settings and seed number for whoever clicks it.
+- **Race link** — the same, with the spoiler download hidden for them.
+
+Opening a link shows the seed and its settings at the top of the Randomizer bar;
+**Play this seed** generates it. Nothing is uploaded: the generator is deterministic,
+so the same seed number and settings make the same game in everyone's browser, from
+each player's own base ROM. Each player keeps their own sprite, music, heart beep,
+menu speed and quickswap.
+
+**Check the code.** Next to the seed number is the five-item code the file select
+screen shows (it's read from the ROM, so it works for seed files from alttpr.com
+too). Everyone in a race should see the same five items.
+
+Race links run on the honor system: the seed number is in the link, so someone
+determined could still work out the spoiler. For a sealed race, generate the seed on
+alttpr.com with spoilers off and share that. Links carry a generator version
+(`v=`); one made with a different version of this app says so, as the game might
+differ (compare codes).
+
+## Sprites
+
+The **Link sprite** setting (Randomizer bar) shows a preview of the current sprite.
+
+- **Library…** browses the [alttpr.com sprite library](https://alttpr.com/en/sprites):
+  search by name, author or tag, filter by tag, or pick one at random. Previews and
+  sprite files come straight from alttpr.com's file host.
+- **File…** uses your own `.zspr` or `.spr`. Its preview is drawn from the file
+  (Link's head); click it to see the whole sprite sheet.
+- **Default** goes back to Link.
+
+The sprite applies to every seed you generate until you change it. The library's list
+comes from alttpr.com/sprites, which browsers can't read from other sites, so the
+deploy workflow copies it into the site as `sprites.json` on every deploy and once a
+week (a copy in the repository is the fallback).
+
 ## Run it
 
 It must be served over HTTP (opening `index.html` as a file won't work, because

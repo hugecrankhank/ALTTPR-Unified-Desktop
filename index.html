@@ -81,6 +81,52 @@
   #r-status.ok { color: var(--accent); }
   #r-status.bad { color: var(--bad); }
   #r-seed-out { font-size: 12px; color: var(--dim); user-select: all; }
+
+  /* seed links (randomizer/share.js) */
+  #r-shared { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; flex-basis: 100%;
+    padding: 8px 10px; border: 1px solid #2a8a4a; border-radius: 8px; background: #102418; font-size: 13px; color: var(--text); }
+  #r-shared[hidden] { display: none; }
+  #r-shared span { color: var(--dim); }
+  #r-shared button.primary { background: #1f6f3a; border-color: #2a8a4a; font-weight: 600; }
+  #r-shared .note { flex-basis: 100%; font-size: 12px; color: var(--warn); }
+  #r-code { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--dim); }
+  #r-code[hidden] { display: none; }
+  #r-code .code-item { display: inline-flex; flex-direction: column; align-items: center; min-width: 34px; }
+  #r-code .code-item img { width: 22px; height: 22px; image-rendering: pixelated; object-fit: contain; }
+  #r-code .code-item small { font-size: 9px; color: var(--text); white-space: nowrap; }
+  #r-code .code-lbl { text-transform: uppercase; letter-spacing: .04em; }
+
+  /* sprite preview and library (randomizer/library.js) */
+  #rando-bar .sprite-field { position: relative; }
+  #rando-bar .sprite-col { display: flex; flex-direction: column; gap: 3px; }
+  .sprite-prev { width: 40px; height: 52px; padding: 2px; display: flex; align-items: center; justify-content: center;
+    background: #0d1117; }
+  .sprite-prev img, .sprite-prev canvas { width: 32px; height: 48px; object-fit: contain; image-rendering: pixelated; }
+  .sprite-prev canvas { height: 32px; }
+  #r-sprite-sheet { position: absolute; z-index: 30; top: 100%; left: 0; margin-top: 4px; padding: 6px; max-height: 60vh;
+    overflow-y: auto; background: #0d1117; border: 1px solid var(--line); border-radius: 8px; }
+  #r-sprite-sheet canvas { display: block; width: 256px; image-rendering: pixelated; }
+  #sprite-lib { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center;
+    padding: 16px; background: rgba(0, 0, 0, .6); }
+  #sprite-lib[hidden] { display: none; }
+  #sprite-lib .sl-box { display: flex; flex-direction: column; width: min(980px, 100%); max-height: 100%;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  #sprite-lib .sl-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 12px;
+    border-bottom: 1px solid var(--line); }
+  #sprite-lib .sl-head b { margin-right: auto; }
+  #sl-search { background: #0d1117; color: var(--text); border: 1px solid var(--line); border-radius: 6px;
+    padding: 5px 8px; font: inherit; font-size: 13px; width: 16em; }
+  #sl-grid { flex: 1; overflow-y: auto; padding: 10px; display: grid; gap: 6px;
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
+  #sl-grid .sl-item { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px 6px;
+    min-width: 0; }
+  #sl-grid .sl-item img { width: 32px; height: 48px; image-rendering: pixelated; }
+  #sl-grid .sl-item .sl-name { font-size: 12px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #sl-grid .sl-item .sl-author { font-size: 10px; color: var(--dim); max-width: 100%; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap; }
+  #sl-grid .sl-item.picking { border-color: var(--accent); }
+  #sprite-lib.busy #sl-grid { opacity: .6; pointer-events: none; }
+  #sprite-lib .sl-note { padding: 8px 12px; border-top: 1px solid var(--line); font-size: 12px; color: var(--dim); }
   #r-toggle[aria-expanded=true] { border-color: var(--accent); }
 
   main { display: grid; grid-template-columns: minmax(0, 1fr) auto; min-height: 0; grid-row: 3; }
@@ -249,6 +295,7 @@
   (the icon at the right end of the address bar), then click the button again.</div>
 
 <section id="rando-bar" aria-label="Randomizer settings">
+  <div id="r-shared" role="status" hidden></div>
   <div class="group">
     <label class="f">World state
       <select id="r-mode">
@@ -337,6 +384,23 @@
     <label class="f">Seed
       <input type="text" id="r-seed" placeholder="random" inputmode="numeric" autocomplete="off" spellcheck="false">
     </label>
+    <div class="f sprite-field">Link sprite
+      <div class="sprite-row">
+        <button type="button" id="r-sprite-prev" class="sprite-prev" title="Browse the sprite library">
+          <img alt="" src="https://alttpr-assets.s3.us-east-2.amazonaws.com/001.link.1.zspr.png"><canvas hidden></canvas>
+        </button>
+        <div class="sprite-col">
+          <div class="sprite-row">
+            <button type="button" id="r-sprite-lib" title="Browse the alttpr.com sprite library">Library…</button>
+            <label class="filebtn" for="r-sprite-input" id="r-sprite-label" title="Use your own .zspr or .spr file">File…</label>
+            <input type="file" id="r-sprite-input">
+            <button type="button" id="r-sprite-clear" hidden title="Go back to the normal Link">Default</button>
+          </div>
+          <span id="r-sprite-name">Default Link</span>
+        </div>
+      </div>
+      <div id="r-sprite-sheet" hidden><canvas></canvas></div>
+    </div>
   </div>
   <details>
     <summary>ROM options</summary>
@@ -358,14 +422,6 @@
           <option value="instant">Instant</option>
         </select>
       </label>
-      <div class="f sprite-field">Link sprite
-        <div class="sprite-row">
-          <label class="filebtn" for="r-sprite-input" id="r-sprite-label" title="Choose a .zspr or .spr sprite file">Choose sprite…</label>
-          <input type="file" id="r-sprite-input">
-          <button id="r-sprite-clear" hidden title="Go back to the normal Link">Default</button>
-        </div>
-        <span id="r-sprite-name">Default Link</span>
-      </div>
       <div class="f sprite-field">MSU-1 music
         <div class="sprite-row">
           <label class="filebtn" for="r-msu-input" title="Choose all the .pcm files of an MSU-1 pack">Choose pack…</label>
@@ -380,9 +436,6 @@
           <option value="on">On</option>
         </select>
       </label>
-      <p class="hint">Sprites: download a <code>.zspr</code> from the
-        <a href="https://alttpr.com/en/sprites" target="_blank" rel="noopener">alttpr.com sprite gallery</a>, then choose it here.
-        It's used for every seed you generate until you press Default.</p>
       <p class="hint">MSU-1: choose all the <code>.pcm</code> files of an ALttP MSU-1 pack at once (on iPhone, tap
         <b>Select</b> in the file picker, then select them all). Seeds you generate afterwards play the pack instead
         of the game's music, including seed files opened with Load ROM.</p>
@@ -394,7 +447,10 @@
     <button id="r-generate">Generate &amp; Play</button>
     <button id="r-download" hidden>Download ROM</button>
     <button id="r-spoiler" hidden>Spoiler</button>
+    <button id="r-share" type="button" hidden title="Copy a link that sets up this exact seed for someone else">&#128279; Share seed</button>
+    <button id="r-share-race" type="button" hidden title="Copy a link to this seed for a race: same game for everyone, spoiler hidden">&#127937; Race link</button>
     <span id="r-seed-out"></span>
+    <span id="r-code" hidden></span>
     <span id="r-status" role="status" aria-live="polite"></span>
   </div>
 </section>
@@ -429,6 +485,20 @@
     <iframe id="tab-map" title="Map tracker" allowtransparency="true"></iframe>
   </div>
 </main>
+
+<div id="sprite-lib" hidden role="dialog" aria-modal="true" aria-label="Sprite library">
+  <div class="sl-box">
+    <div class="sl-head">
+      <b>Sprite library</b>
+      <input type="search" id="sl-search" placeholder="Search names, authors, tags" autocomplete="off" spellcheck="false">
+      <select id="sl-tag" aria-label="Tag"><option value="">All tags</option></select>
+      <button type="button" id="sl-random" title="Pick one at random (from the ones shown)">Random</button>
+      <button type="button" id="sl-close" aria-label="Close">&#10005;</button>
+    </div>
+    <div id="sl-grid"></div>
+    <div id="sl-note" class="sl-note"></div>
+  </div>
+</div>
 
 <script src="bridge/sni-bridge.js"></script>
 <script src="tablet.js"></script>
@@ -775,6 +845,10 @@
       return;
     }
     if (reloadTrackers) loadTrackers();
+    // the randomizer bar shows this ROM's file-select code (and the share
+    // buttons, if it's the seed it generated)
+    if (window.UnifiedRando && window.UnifiedRando.noteRom) window.UnifiedRando.noteRom(bytes, name);
+    else window.__pendingRomNote = { bytes: bytes, name: name };
     AlttpBridge.setRom(bytes, name);
     bootEmulator(new File([bytes], name, { type: 'application/octet-stream' }));
   }

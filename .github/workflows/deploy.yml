@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # weekly, so the sprite library picks up new sprites
+  schedule:
+    - cron: '23 9 * * 1'
 
 permissions:
   contents: read
@@ -22,6 +25,17 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      # alttpr.com/sprites can't be read by a browser from another site, so the
+      # sprite library's list is copied here. The copy in the repository is
+      # kept if alttpr.com can't be reached.
+      - name: Refresh the sprite list
+        run: |
+          if curl -fsS --max-time 60 https://alttpr.com/sprites -o sprites.new.json &&
+             python3 -c "import json,sys; d=json.load(open('sprites.new.json')); sys.exit(0 if isinstance(d, list) and len(d) > 50 else 1)"; then
+            mv sprites.new.json sprites.json
+          else
+            echo "Keeping the sprite list from the repository"; rm -f sprites.new.json
+          fi
       - uses: actions/configure-pages@v5
         with:
           enablement: true

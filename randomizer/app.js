@@ -1,8 +1,10 @@
 // Randomizer bar: settings dropdowns -> seed generation (in a worker) ->
 // patch the player's own Japanese 1.0 ROM in the browser -> boot it.
 import { md5 } from './md5.js';
-import { parseSprite, applySprite } from './sprite.js';
+import { parseSprite, applySprite, drawHead, drawSheet } from './sprite.js';
 import { MsuPlayer, trackNumber } from './msu.js';
+import { buildLink, readLink, clearLink, codeForSeed, codeFromRom, codeNames, renderCode, PARAMS } from './share.js';
+import { openLibrary, fetchSprite, labelOf } from './library.js';
 
 const msu = new MsuPlayer();
 
@@ -225,11 +227,95 @@ function download(bytes, name, type) {
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
+// Which ROM is in the emulator; the share buttons are for a generated seed
+// only, and only while it's the one being played.
+let playing = null;   // { name, code }
+
 function showLast() {
+  const live = !!last && (!playing || playing.name === last.name);
   $('r-download').hidden = !last;
-  $('r-spoiler').hidden = !last;
-  $('r-seed-out').textContent = last ? `Seed ${last.spoiler.seed}` : '';
-  $('r-seed-out').title = 'Type this number in the seed box to get the same game again';
+  // a race seed keeps its spoiler hidden
+  $('r-spoiler').hidden = !last || !!last.race;
+  $('r-seed-out').textContent = last ? (last.race ? `Race seed ${last.spoiler.seed}` : `Seed ${last.spoiler.seed}`) : '';
+  $('r-seed-out').title = last && last.race ? 'A race seed: its spoiler stays hidden'
+    : 'Type this number in the seed box to get the same game again';
+  const canShare = live && !!last.fields;
+  $('r-share').hidden = !canShare;
+  $('r-share-race').hidden = !canShare;
+  renderCode($('r-code'), playing ? playing.code : (last ? codeForSeed(last.spoiler.seed) : null));
+}
+
+// Called by the main page whenever a ROM starts, generated or loaded.
+function noteRom(bytes, name) {
+  const off = bytes.length % 1024 === 512 ? 512 : 0;
+  playing = { name, code: codeFromRom(bytes.subarray(off)) };
+  showLast();
+}
+
+async function copyLink(race) {
+  if (!last || !last.fields) return;
+  const url = buildLink(last.spoiler.seed, last.fields, race);
+  const what = race ? 'Race link' : 'Seed link';
+  try {
+    await navigator.clipboard.writeText(url);
+    status(`${what} copied. Anyone who opens it gets the same game (they need their own base ROM).` +
+      (race ? ' The spoiler is hidden for them.' : ''), 'ok');
+  } catch (e) {
+    window.prompt(`${what}: copy it from here`, url);
+  }
+}
+
+// ── a seed link someone shared ────────────────────────────────────────────────
+let shared = null;   // { seed, fields, race } while the link's seed is waiting to be played
+
+function settingsMatch(fields) {
+  return Object.keys(PARAMS).every((k) => { const id = PARAMS[k]; return !(id in fields) || $(id).value === fields[id]; });
+}
+function currentFields() {
+  const o = {};
+  Object.values(PARAMS).forEach((id) => { o[id] = $(id).value; });
+  return o;
+}
+
+function showShared() {
+  const box = $('r-shared');
+  if (!shared) { box.hidden = true; return; }
+  const parts = Object.values(PARAMS).map((id) => {
+    const el = $(id); return el && el.selectedOptions[0] ? el.selectedOptions[0].textContent : '';
+  }).filter(Boolean);
+  box.hidden = false;
+  box.innerHTML = '';
+  const b = document.createElement('b');
+  b.textContent = shared.race ? `Race seed ${shared.seed}` : `Shared seed ${shared.seed}`;
+  const p = document.createElement('span');
+  p.textContent = ' · ' + parts.join(' · ');
+  const go = document.createElement('button');
+  go.type = 'button'; go.className = 'primary'; go.textContent = 'Play this seed';
+  go.addEventListener('click', generateAndPlay);
+  const x = document.createElement('button');
+  x.type = 'button'; x.textContent = 'Dismiss';
+  x.addEventListener('click', () => { shared = null; clearLink(); showShared(); $('r-seed').value = ''; });
+  box.append(b, p, go, x);
+  const notes = [];
+  if (shared.race) notes.push('Race: the spoiler stays hidden. Check that everyone sees the same five-item code on the file select screen.');
+  if (shared.otherBuild) notes.push('This link was made with a different version of the generator, so the game may not match the other players\' — compare the five-item code.');
+  if (shared.problems.length) notes.push(`Some settings in the link weren't recognised (${shared.problems.join(', ')}).`);
+  if (notes.length) {
+    const n = document.createElement('div');
+    n.className = 'note'; n.textContent = notes.join(' ');
+    box.appendChild(n);
+  }
+}
+
+function takeSharedLink() {
+  const l = readLink(location.search, $);
+  if (!l) return;
+  Object.entries(l.fields).forEach(([id, v]) => { $(id).value = v; });
+  $('r-seed').value = String(l.seed);
+  shared = { seed: l.seed, fields: currentFields(), race: l.race, otherBuild: l.otherBuild, problems: l.problems };
+  document.body.classList.add('rando-open');
+  $('r-toggle').setAttribute('aria-expanded', 'true');
+  showShared();
 }
 
 const TRACKER_DI = { standard: 'standard', mc: 'mapcompass', mcs: 'mapcompasskeys', full: 'keysanity' };
@@ -243,8 +329,12 @@ async function generateAndPlay() {
     $('r-base-input').click();
     return;
   }
-  saveFields();
+  // playing a shared seed exactly as linked? then don't overwrite this
+  // player's own saved choices with the link's
+  const fromLink = !!shared && parseSeed($('r-seed').value) === shared.seed && settingsMatch(shared.fields);
+  if (!fromLink) saveFields();
   const settings = readSettings();
+  const fields = currentFields();
   const typed = parseSeed($('r-seed').value);
   btn.disabled = true;
   try {
@@ -278,9 +368,11 @@ async function generateAndPlay() {
 
     const m = res.spoiler.meta || {};
     const name = `alttpr - ${m.logic}-${m.mode}-${m.goal}_${res.hash}.sfc`;
-    last = { rom, name, spoiler: { seed: res.seed, hash: res.hash, ...res.spoiler } };
+    last = { rom, name, fields, race: fromLink && shared.race, spoiler: { seed: res.seed, hash: res.hash, ...res.spoiler } };
+    if (fromLink) { shared = null; clearLink(); showShared(); $('r-seed').value = ''; }
+    playing = null;
     showLast();
-    status(baseOk ? `Ready: ${res.hash} (${(res.ms / 1000).toFixed(1)}s)`
+    status(baseOk ? `Ready: ${res.hash}, code ${codeNames(codeForSeed(res.seed)).join(' / ')} (${(res.ms / 1000).toFixed(1)}s)`
       : `Ready: ${res.hash}. Note: the base ROM check didn't match alttpr.com's build; report it if anything looks off.`, baseOk ? 'ok' : 'bad');
     // fold the settings away so the game is on screen (any layout), and
     // remember it across the reload EmulatorJS needs to switch games
@@ -318,11 +410,35 @@ async function useIfBaseRom(bytes) {
   return true;
 }
 
+const LINK_PREVIEW = 'https://alttpr-assets.s3.us-east-2.amazonaws.com/001.link.1.zspr.png';
+
 async function refreshSprite() {
   const sp = await kvGet('sprite').catch(() => null);
   $('r-sprite-name').textContent = sp ? sp.label : 'Default Link';
   $('r-sprite-name').title = sp ? sp.label : '';
   $('r-sprite-clear').hidden = !sp;
+  // the preview: alttpr.com's own picture for library sprites, otherwise the
+  // head drawn from the file (and its whole sheet on click)
+  const img = $('r-sprite-prev').querySelector('img'), cv = $('r-sprite-prev').querySelector('canvas');
+  let parsed = null;
+  try { parsed = sp && sp.bytes ? parseSprite(sp.bytes) : null; } catch (e) {}
+  const own = !!parsed && !sp.preview && drawHead(parsed, cv);
+  cv.hidden = !own;
+  img.hidden = own;
+  if (!own) img.src = (sp && sp.preview) || LINK_PREVIEW;
+  $('r-sprite-prev').title = own ? 'Show the whole sprite sheet' : 'Browse the sprite library';
+  $('r-sprite-prev').dataset.sheet = own ? '1' : '';
+  $('r-sprite-sheet').hidden = true;
+  if (own) drawSheet(parsed, $('r-sprite-sheet').querySelector('canvas'));
+}
+
+async function useLibrarySprite(entry) {
+  const bytes = await fetchSprite(entry);
+  parseSprite(bytes);   // throws with a readable reason if it isn't a sprite
+  const label = labelOf(entry);
+  await kvSet('sprite', { bytes: bytes.slice(), label, preview: entry.preview });
+  status(`Sprite set: ${label}. It applies to the next seed you generate.`, 'ok');
+  refreshSprite();
 }
 
 function spriteLabel(info, fileName) {
@@ -419,7 +535,18 @@ export function init() {
   });
   refreshSprite();
 
-  window.UnifiedRando = { useIfBaseRom, prepareLoadedRom };
+  window.UnifiedRando = { useIfBaseRom, prepareLoadedRom, noteRom };
+  if (window.__pendingRomNote) { noteRom(window.__pendingRomNote.bytes, window.__pendingRomNote.name); window.__pendingRomNote = null; }
+  $('r-sprite-lib').addEventListener('click', () => openLibrary($, useLibrarySprite));
+  $('r-sprite-prev').addEventListener('click', () => {
+    if ($('r-sprite-prev').dataset.sheet) $('r-sprite-sheet').hidden = !$('r-sprite-sheet').hidden;
+    else openLibrary($, useLibrarySprite);
+  });
+  document.addEventListener('click', (e) => {
+    if (!$('r-sprite-sheet').hidden && !e.target.closest('#r-sprite-sheet, #r-sprite-prev')) $('r-sprite-sheet').hidden = true;
+  });
+  $('r-share').addEventListener('click', () => copyLink(false));
+  $('r-share-race').addEventListener('click', () => copyLink(true));
   initMsu();
   loadFields();
   FIELDS.forEach((id) => $(id) && $(id).addEventListener('change', saveFields));
@@ -452,4 +579,7 @@ export function init() {
   // load the generator's modules in the background so the first Generate is quick
   setTimeout(() => { try { getWorker(); } catch (e) {} }, 2000);
   kvGet('last-seed').then((v) => { if (v && v.rom) { last = v; showLast(); } }).catch(() => {});
+  // opened from a seed link: set it up, ready to play (after loadFields, so
+  // the link's settings win)
+  takeSharedLink();
 }
