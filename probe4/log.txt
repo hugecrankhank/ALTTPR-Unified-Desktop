@@ -1,0 +1,39 @@
+HTTP/1.1 200 OK
+Content-Length: 524
+Content-Type: text/html
+Date: Wed, 07 Oct 2026 23:25:16 GMT
+Server: nginx/1.30.5
+Accept-Ranges: bytes
+ETag: "6ab6001f-20c"
+Last-Modified: Fri, 25 Sep 2026 05:01:19 GMT
+
+href="/favicon.ico"
+href="https://alttpr.com/css/app.css"
+src="/assets/index-DlqoQ-ap.js"
+href="/assets/index-FbBjVMSq.css"
+got /assets/index-DlqoQ-ap.js 728694
+got /assets/index-FbBjVMSq.css 321381
+== /
+HTTP/1.1 200 OK
+Content-Type: text/html
+== /api
+HTTP/1.1 200 OK
+Content-Type: text/html
+== /api/
+HTTP/1.1 200 OK
+Content-Type: text/html
+== /robots.txt
+HTTP/1.1 200 OK
+Content-Type: text/html
+== /about
+HTTP/1.1 200 OK
+Content-Type: text/html
+== /settings
+HTTP/1.1 200 OK
+Content-Type: text/html
+== /api/settings
+HTTP/1.1 200 OK
+Content-Type: text/html
+== /api/randomizer/settings
+HTTP/1.1 200 OK
+Content-Type: text/html
