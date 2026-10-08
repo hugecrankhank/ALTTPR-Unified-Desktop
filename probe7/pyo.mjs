@@ -10,7 +10,7 @@ for (const a of rest) { if (a === '--next') { runs.push(cur); cur = []; } else c
 if (cur.length) runs.push(cur);
 
 let t = Date.now();
-const py = await loadPyodide();
+const py = await loadPyodide({ env: { PYTHONHASHSEED: '0', HOME: '/home/pyodide' } });
 console.log('STAGE load', (Date.now() - t) / 1000);
 t = Date.now();
 await py.loadPackage(['pyyaml', 'micropip']);

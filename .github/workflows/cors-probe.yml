@@ -28,14 +28,16 @@ jobs:
           cd gw
           echo "=== native"
           PYTHONHASHSEED=1 timeout 240 python $OUT/gen.py normal 12345
-          PYTHONHASHSEED=2 timeout 240 python $OUT/gen.py normal 12345
-          PYTHONHASHSEED=1 timeout 240 python $OUT/gen.py normal 777
+          PYTHONHASHSEED=1 timeout 240 python $OUT/gen.py normal 12345
+          PYTHONHASHSEED=0 timeout 240 python $OUT/gen.py normal 12345
+          PYTHONHASHSEED=0 timeout 240 python $OUT/gen.py normal 777
           echo "=== pyodide"
           cd $OUT && npm i -s pyodide@0.27.7 >/dev/null 2>&1; du -sh node_modules/pyodide
           ls -la node_modules/pyodide | head -30
-          timeout 600 node pyo.mjs $GITHUB_WORKSPACE/gw normal 12345 --next normal 777
+          timeout 300 node pyo.mjs $GITHUB_WORKSPACE/gw normal 12345 --next normal 777
+          timeout 300 node pyo.mjs $GITHUB_WORKSPACE/gw normal 12345
           rm -rf node_modules package*.json
       - if: always()
         run: |
           git config user.name probe; git config user.email probe@example.com
-          git add -A probe7; git commit -m "probe: gwaa short result"; git push
+          git add -A probe7; git commit -m "probe: gwaa hashseed result"; git push
