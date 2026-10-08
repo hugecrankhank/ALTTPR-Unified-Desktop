@@ -7,29 +7,36 @@ permissions:
 jobs:
   probe:
     runs-on: ubuntu-latest
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
-      - run: |
-          mkdir -p probe6
-          exec > probe6/log.txt 2>&1
-          set +x; set +e
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: generator
+        run: |
+          set +e
+          OUT=$PWD/probe7
+          exec > $OUT/log.txt 2>&1
           git clone --depth 1 https://git.gwaa.kiwi/alttpr-gwaa-kiwi/alttpr-python gw
-          git -C gw log -1 --format='%H %ci %s'
-          tar --exclude=.git -czf probe6/src.tgz gw
-          ls -la gw; cat gw/pyproject.toml; cat gw/.python-version
+          git -C gw log -1 --format='%H %ci'
+          pip install -q pyyaml fast-enum python-bps-continued aenum colorama aioconsole websockets
+          HEAVY="--ow_shuffle full --ow_mixed --ow_crossed polar --shuffle crossed --door_shuffle crossed"
           cd gw
-          pip install -q . 2>&1 | tail -5 || true
-          pip install -q pyyaml colorama aenum fast-enum websockets 2>&1 | tail -3
-          pip freeze
-          python DungeonRandomizer.py --help > ../probe6/help.txt 2>&1
-          for s in 12345 12345 777; do
-            mkdir -p ../out_$s
-            /usr/bin/time -v python DungeonRandomizer.py --seed $s --suppress_rom --spoiler full --outputpath ../probe6/out_${s}_$RANDOM 2>&1 | tail -40
+          echo "=== native"
+          for hs in 1 2; do
+            PYTHONHASHSEED=$hs timeout 600 python $OUT/gen.py normal 12345
+            PYTHONHASHSEED=$hs timeout 600 python $OUT/gen.py normal 777
+            PYTHONHASHSEED=$hs timeout 900 python $OUT/gen.py heavy 12345 $HEAVY
           done
-          ls -R ../probe6 | head -50
+          echo "=== pyodide"
+          cd $OUT && npm i -s pyodide@0.27.7 >/dev/null 2>&1; du -sh node_modules/pyodide
+          ls -la node_modules/pyodide | head -30
+          timeout 1800 node pyo.mjs $GITHUB_WORKSPACE/gw normal 12345 --next normal 777 --next heavy 12345 $HEAVY
+          rm -rf node_modules package*.json
       - run: |
           git config user.name probe; git config user.email probe@example.com
-          git add -A probe6; git commit -m "probe: gwaa generator"; git push
+          git add -A probe7; git commit -m "probe: gwaa generator timing"; git push
