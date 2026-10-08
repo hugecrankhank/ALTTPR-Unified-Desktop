@@ -1,0 +1,19 @@
+You need to install the following python packages:
+python-bps-continued,aioconsole
+See the step about "Installing Platform-specific dependencies":
+https://github.com/aerinon/ALttPDoorRandomizer/blob/DoorDev/docs/BUILDING.md
+Traceback (most recent call last):
+  File "/home/runner/work/ALTTPR-Unified-Desktop/ALTTPR-Unified-Desktop/gw/Rom.py", line 15, in <module>
+    import bps.apply
+ModuleNotFoundError: No module named 'bps'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/runner/work/ALTTPR-Unified-Desktop/ALTTPR-Unified-Desktop/gw/DungeonRandomizer.py", line 14, in <module>
+    from Main import EnemizerError, main
+  File "/home/runner/work/ALTTPR-Unified-Desktop/ALTTPR-Unified-Desktop/gw/Main.py", line 66, in <module>
+    from Rom import (
+  File "/home/runner/work/ALTTPR-Unified-Desktop/ALTTPR-Unified-Desktop/gw/Rom.py", line 18, in <module>
+    raise Exception('Could not load BPS module')
+Exception: Could not load BPS module
