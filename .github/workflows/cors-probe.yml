@@ -14,9 +14,8 @@ jobs:
           set +e
           cd probe9
           exec > log.txt 2>&1
-          echo "=== normal"; python3 api.py get:hkrKQVVkgT
-          echo "=== race"; python3 api.py get:ni6WchbWFA
+          curl -sS -o seed-normal.json https://api.alttpr.gwaa.kiwi/seed/hkrKQVVkgT; ls -la seed-normal.json
       - if: always()
         run: |
           git config user.name probe; git config user.email probe@example.com
-          git add -A probe9; git commit -m "probe: gwaa api result2"; git push
+          git add -A probe9; git commit -m "probe: gwaa seed json"; git push
