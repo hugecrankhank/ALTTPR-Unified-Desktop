@@ -12,23 +12,11 @@ jobs:
       - uses: actions/checkout@v4
       - run: |
           set +e
-          mkdir -p probe8 && cd probe8
+          cd probe9
           exec > log.txt 2>&1
-          for r in alttpr-frontend alttpr-backend alttpr-baserom; do
-            git clone --depth 1 https://git.gwaa.kiwi/alttpr-gwaa-kiwi/$r $r && git -C $r log -1 --format="$r %H %ci"
-            tar --exclude=.git -czf $r.tgz $r; rm -rf $r
-          done
-          V=0.27.7
-          curl -sSL -o core.tar.bz2 https://github.com/pyodide/pyodide/releases/download/$V/pyodide-core-$V.tar.bz2; ls -la core.tar.bz2
-          tar -tjf core.tar.bz2 | head -30
-          mkdir pyo && tar -xjf core.tar.bz2 -C pyo --strip-components=1 && rm core.tar.bz2
-          W=$(python3 -c "import json;d=json.load(open('pyo/pyodide-lock.json'));print(d['packages']['pyyaml']['file_name'])")
-          echo wheel $W
-          curl -sSL -o pyo/$W https://cdn.jsdelivr.net/pyodide/v$V/full/$W
-          ls -la pyo
-          tar -czf pyodide.tgz pyo; rm -rf pyo
-          ls -la
+          echo "=== normal"; python3 api.py normal
+          echo "=== race"; python3 api.py race
       - if: always()
         run: |
           git config user.name probe; git config user.email probe@example.com
-          git add -A probe8; git commit -m "probe: gwaa sources"; git push
+          git add -A probe9; git commit -m "probe: gwaa api result"; git push
