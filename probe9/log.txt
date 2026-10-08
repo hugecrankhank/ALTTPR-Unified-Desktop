@@ -1,0 +1,10 @@
+=== normal
+POST 202 {'Content-Type': 'text/plain; charset=utf-8'} b'hkrKQVVkgT'
+GET 202 0 s {}
+b'hkrKQVVkgT'
+OPTIONS 405 {}
+=== race
+POST 202 {'Content-Type': 'text/plain; charset=utf-8'} b'ni6WchbWFA'
+GET 202 0 s {}
+b'ni6WchbWFA'
+OPTIONS 405 {}
