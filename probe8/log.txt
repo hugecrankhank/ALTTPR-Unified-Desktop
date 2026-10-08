@@ -1,0 +1,38 @@
+Cloning into 'alttpr-frontend'...
+alttpr-frontend 8d73cbf433348eb7bdf036e813877615d4342151 2026-09-25 00:08:30 -0500
+Cloning into 'alttpr-backend'...
+alttpr-backend e56971bcf1a35bc2557e2bb638d492b1171cfaf1 2026-10-03 13:22:57 -0500
+Cloning into 'alttpr-baserom'...
+alttpr-baserom 5e892ca28385219a0b86e9f59982dd5ee72b0fd7 2026-06-15 16:58:18 -0500
+-rw-r--r-- 1 runner runner 5608503 Oct  8 01:08 core.tar.bz2
+pyodide/pyodide.js
+pyodide/pyodide.mjs
+pyodide/pyodide.asm.js
+pyodide/pyodide.asm.wasm
+pyodide/ffi.d.ts
+pyodide/pyodide.d.ts
+pyodide/package.json
+pyodide/pyodide-lock.json
+pyodide/python_stdlib.zip
+wheel pyyaml-6.0.2-cp312-cp312-pyodide_2024_0_wasm32.whl
+total 13792
+drwxr-xr-x 2 runner runner     4096 Oct  8 01:08 .
+drwxr-xr-x 3 runner runner     4096 Oct  8 01:08 ..
+-rw-r--r-- 1 runner runner    44144 Jun  5  2025 ffi.d.ts
+-rw-r--r-- 1 runner runner     3267 Jun  5  2025 package.json
+-rw-r--r-- 1 runner runner   112205 Jun  5  2025 pyodide-lock.json
+-rw-r--r-- 1 runner runner  1255688 Jun  5  2025 pyodide.asm.js
+-rwxr-xr-x 1 runner runner 10105545 Jun  5  2025 pyodide.asm.wasm
+-rw-r--r-- 1 runner runner    63609 Jun  5  2025 pyodide.d.ts
+-rw-r--r-- 1 runner runner    14913 Jun  5  2025 pyodide.js
+-rw-r--r-- 1 runner runner    13931 Jun  5  2025 pyodide.mjs
+-rw-r--r-- 1 runner runner  2360737 Jun  5  2025 python_stdlib.zip
+-rw-r--r-- 1 runner runner   119989 Oct  8 01:08 pyyaml-6.0.2-cp312-cp312-pyodide_2024_0_wasm32.whl
+total 11516
+drwxr-xr-x  2 runner runner    4096 Oct  8 01:08 .
+drwxr-xr-x 14 runner runner    4096 Oct  8 01:08 ..
+-rw-r--r--  1 runner runner   24295 Oct  8 01:08 alttpr-backend.tgz
+-rw-r--r--  1 runner runner 1635258 Oct  8 01:08 alttpr-baserom.tgz
+-rw-r--r--  1 runner runner 4197571 Oct  8 01:08 alttpr-frontend.tgz
+-rw-r--r--  1 runner runner    1445 Oct  8 01:08 log.txt
+-rw-r--r--  1 runner runner 5917044 Oct  8 01:08 pyodide.tgz
