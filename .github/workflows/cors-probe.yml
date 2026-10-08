@@ -9,16 +9,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
       - run: |
-          mkdir -p probe5 && cd probe5
-          exec > log.txt 2>&1
-          set +e
-          for O in "https://hugecrankhank.github.io" "https://alttpr.gwaa.kiwi"; do
-            echo "######## Origin $O"
-            echo "== GET /seed/doesnotexist"; curl -sS -D - -o body1.txt -H "Origin: $O" https://api.alttpr.gwaa.kiwi/seed/doesnotexist | grep -i -E "^HTTP|access-control|content-type|vary"; head -c 200 body1.txt; echo
-            echo "== OPTIONS /generate (json POST preflight)"; curl -sS -D - -o /dev/null -X OPTIONS -H "Origin: $O" -H "Access-Control-Request-Method: POST" -H "Access-Control-Request-Headers: content-type" https://api.alttpr.gwaa.kiwi/generate | grep -i -E "^HTTP|access-control|vary"
-            echo "== OPTIONS /seed/x GET"; curl -sS -D - -o /dev/null -X OPTIONS -H "Origin: $O" -H "Access-Control-Request-Method: GET" https://api.alttpr.gwaa.kiwi/seed/x | grep -i -E "^HTTP|access-control"
+          mkdir -p probe6
+          exec > probe6/log.txt 2>&1
+          set +x; set +e
+          git clone --depth 1 https://git.gwaa.kiwi/alttpr-gwaa-kiwi/alttpr-python gw
+          git -C gw log -1 --format='%H %ci %s'
+          tar --exclude=.git -czf probe6/src.tgz gw
+          ls -la gw; cat gw/pyproject.toml; cat gw/.python-version
+          cd gw
+          pip install -q . 2>&1 | tail -5 || true
+          pip install -q pyyaml colorama aenum fast-enum websockets 2>&1 | tail -3
+          pip freeze
+          python DungeonRandomizer.py --help > ../probe6/help.txt 2>&1
+          for s in 12345 12345 777; do
+            mkdir -p ../out_$s
+            /usr/bin/time -v python DungeonRandomizer.py --seed $s --suppress_rom --spoiler full --outputpath ../probe6/out_${s}_$RANDOM 2>&1 | tail -40
           done
+          ls -R ../probe6 | head -50
       - run: |
           git config user.name probe; git config user.email probe@example.com
-          git add -A probe5; git commit -m "probe: gwaa cors"; git push
+          git add -A probe6; git commit -m "probe: gwaa generator"; git push
