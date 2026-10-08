@@ -1,10 +1,19 @@
 === normal
-POST 202 {'Content-Type': 'text/plain; charset=utf-8'} b'hkrKQVVkgT'
-GET 202 0 s {}
-b'hkrKQVVkgT'
+GET 200 65 s {}
+keys ['created', 'meta', 'patch', 'settings', 'spoiler', 'status']
+settings {"randomizer": "base", "player_name": "", "player_slot": 1, "race": "normal", "mystery": "normal", "mode": "open", "weapons": "random", "goal": "ganon", "crystals_ganon": "7", "bosses_ganon": "8of10", "triforce_pieces": "20of30", "crystals_gt": "7", "ganon_item": "silver", "require_ganon_item": "silverless_allowed", "entrance_shuffle": "vanilla", "overworld_map_dungeons": "vanilla", "links_house":
+patch bytes 263986 b'BPS1' srccrc 0x3322effc
+created 1791429773
+meta {"version": "1.1.0", "versions": {"Door": "1.5.6-u", "Overworld": "0.7.0.3"}, "logic": "noglitches", "mode": "open", "bombbag": false, "weapons": "random", "flute_mode": "normal", "bow_mode": "progressive", "goal": "ganon", "custom_goals": {"gtentry": null, "ganongoal": null, "pedgoal": null, "murahgoal": null}, "ow_layout": "vanilla", "ow_parallel": true, "ow_terrain": false, "ow_crossed": "none"
+spoiler type dict ['Overworld', 'Whirlpools', 'Maps', 'Entrances', 'Doors', 'Lobbies', 'DoorTypes', 'Light World', 'Dark World', 'Caves', 'Hyrule Castle', 'Eastern Palace']
+status 200
 OPTIONS 405 {}
 === race
-POST 202 {'Content-Type': 'text/plain; charset=utf-8'} b'ni6WchbWFA'
-GET 202 0 s {}
-b'ni6WchbWFA'
+GET 200 0 s {}
+keys ['created', 'meta', 'patch', 'settings', 'status']
+settings {"randomizer": "base", "player_name": "", "player_slot": 1, "race": "race", "mystery": "normal", "mode": "open", "weapons": "random", "goal": "ganon", "crystals_ganon": "7", "bosses_ganon": "8of10", "triforce_pieces": "20of30", "crystals_gt": "7", "ganon_item": "silver", "require_ganon_item": "silverless_allowed", "entrance_shuffle": "vanilla", "overworld_map_dungeons": "vanilla", "links_house": "
+patch bytes 263903 b'BPS1' srccrc 0x3322effc
+created 1791429774
+meta {"version": "1.1.0", "versions": {"Door": "1.5.6-u", "Overworld": "0.7.0.3"}, "logic": "noglitches", "mode": "open", "bombbag": false, "weapons": "random", "flute_mode": "normal", "bow_mode": "progressive", "goal": "ganon", "custom_goals": {"gtentry": null, "ganongoal": null, "pedgoal": null, "murahgoal": null}, "ow_layout": "vanilla", "ow_parallel": true, "ow_terrain": false, "ow_crossed": "none"
+status 200
 OPTIONS 405 {}
