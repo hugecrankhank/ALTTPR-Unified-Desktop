@@ -7,37 +7,28 @@ permissions:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: generator
-        run: |
+      - run: |
           set +e
-          OUT=$PWD/probe7
-          exec > $OUT/log.txt 2>&1
-          git clone --depth 1 https://git.gwaa.kiwi/alttpr-gwaa-kiwi/alttpr-python gw
-          git -C gw log -1 --format='%H %ci'
-          pip install -q pyyaml fast-enum python-bps-continued aenum colorama aioconsole websockets
-          HEAVY="--ow_shuffle full --ow_mixed --ow_crossed polar --shuffle crossed --door_shuffle crossed"
-          cd gw
-          echo "=== native"
-          PYTHONHASHSEED=1 timeout 240 python $OUT/gen.py normal 12345
-          PYTHONHASHSEED=1 timeout 240 python $OUT/gen.py normal 12345
-          PYTHONHASHSEED=0 timeout 240 python $OUT/gen.py normal 12345
-          PYTHONHASHSEED=0 timeout 240 python $OUT/gen.py normal 777
-          echo "=== pyodide"
-          cd $OUT && npm i -s pyodide@0.27.7 >/dev/null 2>&1; du -sh node_modules/pyodide
-          ls -la node_modules/pyodide | head -30
-          timeout 300 node pyo.mjs $GITHUB_WORKSPACE/gw normal 12345 --next normal 777
-          timeout 300 node pyo.mjs $GITHUB_WORKSPACE/gw normal 12345
-          rm -rf node_modules package*.json
+          cd probe8
+          exec > log.txt 2>&1
+          for r in alttpr-frontend alttpr-backend alttpr-baserom; do
+            git clone --depth 1 https://git.gwaa.kiwi/alttpr-gwaa-kiwi/$r $r && git -C $r log -1 --format="$r %H %ci"
+            tar --exclude=.git -czf $r.tgz $r; rm -rf $r
+          done
+          V=0.27.7
+          curl -sSL -o core.tar.bz2 https://github.com/pyodide/pyodide/releases/download/$V/pyodide-core-$V.tar.bz2; ls -la core.tar.bz2
+          tar -tjf core.tar.bz2 | head -30
+          mkdir pyo && tar -xjf core.tar.bz2 -C pyo --strip-components=1 && rm core.tar.bz2
+          W=$(python3 -c "import json;d=json.load(open('pyo/pyodide-lock.json'));print(d['packages']['pyyaml']['file_name'])")
+          echo wheel $W
+          curl -sSL -o pyo/$W https://cdn.jsdelivr.net/pyodide/v$V/full/$W
+          ls -la pyo
+          tar -czf pyodide.tgz pyo; rm -rf pyo
+          ls -la
       - if: always()
         run: |
           git config user.name probe; git config user.email probe@example.com
-          git add -A probe7; git commit -m "probe: gwaa hashseed result"; git push
+          git add -A probe8; git commit -m "probe: gwaa sources"; git push
