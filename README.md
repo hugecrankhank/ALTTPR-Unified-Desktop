@@ -247,12 +247,11 @@ windows show pieces of the two trackers that run in the main page; see *How the
 pieces stay in step* above. Each pop-out asks the main page once a second what it
 holds, which is also how it reconnects after the main page reloads for a new ROM.
 
-Two additions to Hutch's files: seven bottle pictures (`tracker/items/bottle_*.png`:
-empty, red, green and blue potion, fairy, bee, good bee) that his item tracker asks
-for but his repository doesn't include yet, drawn from his own bottle outline; and,
-in `bridge/sni-shim.js`, a guard that skips item updates that would change nothing
-(his tracker re-applies every bottle on each memory read, which flickered). If his
-repository gains its own bottle pictures, they replace these.
+Two notes on Hutch's files: the bottle pictures (`tracker/items/bottle_*.png`:
+empty, red, green and blue potion, fairy, bee, good bee) are now Hutch's own,
+taken from his repository; and, in `bridge/sni-shim.js`, a guard skips item
+updates that would change nothing (his tracker re-applies every bottle on each
+memory read, which flickered).
 
 The only change to the Hutch files is one `<script>` line at the top of
 `itemtracker.html`, `map.html`, `timer.html` and `broadcast.html`. Opened
