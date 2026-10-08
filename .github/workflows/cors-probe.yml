@@ -22,4 +22,4 @@ jobs:
       - if: always()
         run: |
           git config user.name probe; git config user.email probe@example.com
-          git add -A probe9; git commit -m "probe: gwaa cors live2"; git push
+          git add -A probe9; git commit -m "probe: gwaa cors live3"; git push
