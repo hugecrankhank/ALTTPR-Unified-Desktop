@@ -7,7 +7,7 @@ permissions:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 50
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -27,16 +27,15 @@ jobs:
           HEAVY="--ow_shuffle full --ow_mixed --ow_crossed polar --shuffle crossed --door_shuffle crossed"
           cd gw
           echo "=== native"
-          for hs in 1 2; do
-            PYTHONHASHSEED=$hs timeout 600 python $OUT/gen.py normal 12345
-            PYTHONHASHSEED=$hs timeout 600 python $OUT/gen.py normal 777
-            PYTHONHASHSEED=$hs timeout 900 python $OUT/gen.py heavy 12345 $HEAVY
-          done
+          PYTHONHASHSEED=1 timeout 240 python $OUT/gen.py normal 12345
+          PYTHONHASHSEED=2 timeout 240 python $OUT/gen.py normal 12345
+          PYTHONHASHSEED=1 timeout 240 python $OUT/gen.py normal 777
           echo "=== pyodide"
           cd $OUT && npm i -s pyodide@0.27.7 >/dev/null 2>&1; du -sh node_modules/pyodide
           ls -la node_modules/pyodide | head -30
-          timeout 1800 node pyo.mjs $GITHUB_WORKSPACE/gw normal 12345 --next normal 777 --next heavy 12345 $HEAVY
+          timeout 600 node pyo.mjs $GITHUB_WORKSPACE/gw normal 12345 --next normal 777
           rm -rf node_modules package*.json
-      - run: |
+      - if: always()
+        run: |
           git config user.name probe; git config user.email probe@example.com
-          git add -A probe7; git commit -m "probe: gwaa generator timing"; git push
+          git add -A probe7; git commit -m "probe: gwaa short result"; git push
