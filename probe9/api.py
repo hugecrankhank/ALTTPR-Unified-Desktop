@@ -9,10 +9,16 @@ def req(method, path, body=None, origin='https://hugecrankhank.github.io'):
             return resp.status, dict(resp.headers), resp.read()
     except urllib.error.HTTPError as e:
         return e.code, dict(e.headers), e.read()
+if sys.argv[1].startswith('get:'):
+    sids = [sys.argv[1][4:]]
+else:
+    sids = []
 settings = {"randomizer": "base", "race": sys.argv[1], "mode": "open", "weapons": "random", "goal": "ganon", "crystals_ganon": "7", "crystals_gt": "7", "show_map": "always", "hints": "off"}
-st, h, b = req('POST', '/generate', settings)
-print('POST', st, {k: v for k, v in h.items() if 'ccess' in k or 'ype' in k}, b[:200])
-sid = json.loads(b) if st == 200 else None
+sid = sids[0] if sids else None
+if not sid:
+    st, h, b = req('POST', '/generate', settings)
+    print('POST', st, b[:200])
+    sid = b.decode().strip().strip('"') if st in (200, 202) else None
 t = time.time()
 while sid:
     st, h, b = req('GET', f'/seed/{sid}')

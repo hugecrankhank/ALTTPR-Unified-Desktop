@@ -14,9 +14,9 @@ jobs:
           set +e
           cd probe9
           exec > log.txt 2>&1
-          echo "=== normal"; python3 api.py normal
-          echo "=== race"; python3 api.py race
+          echo "=== normal"; python3 api.py get:hkrKQVVkgT
+          echo "=== race"; python3 api.py get:ni6WchbWFA
       - if: always()
         run: |
           git config user.name probe; git config user.email probe@example.com
-          git add -A probe9; git commit -m "probe: gwaa api result"; git push
+          git add -A probe9; git commit -m "probe: gwaa api result2"; git push
